@@ -1,0 +1,29 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handler = void 0;
+/**
+ * Technical Scanner Lambda
+ * Identifies stocks where price crossed above 60-day or 250-day SMA
+ * Runs daily at 7 PM ET after market close
+ */
+const handler = async () => {
+    const scanDate = new Date().toISOString().split('T')[0];
+    console.log(`[TechnicalScanner] Starting scan for ${scanDate}`);
+    // TODO: Implement actual scanning logic:
+    // 1. Fetch stock universe from financial API (Polygon.io/Alpaca)
+    // 2. Calculate 60MA and 250MA for each stock
+    // 3. Identify breakthroughs (price crossed above MA)
+    // 4. Enrich with peer data (top 3 competitors by GICS sub-industry)
+    // 5. Fetch relative metrics: P/E, RSI, Volume growth
+    // 6. Fetch news RAG: last 14 days of headlines and SEC filings
+    // Placeholder response
+    const triggeredStocks = [];
+    console.log(`[TechnicalScanner] Found ${triggeredStocks.length} breakthroughs`);
+    return {
+        triggeredStocks,
+        triggeredStocksCount: triggeredStocks.length,
+        scanDate,
+    };
+};
+exports.handler = handler;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJpbmRleC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFvQkE7Ozs7R0FJRztBQUNJLE1BQU0sT0FBTyxHQUFpQyxLQUFLLElBQUksRUFBRTtJQUM5RCxNQUFNLFFBQVEsR0FBRyxJQUFJLElBQUksRUFBRSxDQUFDLFdBQVcsRUFBRSxDQUFDLEtBQUssQ0FBQyxHQUFHLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQztJQUV4RCxPQUFPLENBQUMsR0FBRyxDQUFDLHdDQUF3QyxRQUFRLEVBQUUsQ0FBQyxDQUFDO0lBRWhFLHlDQUF5QztJQUN6QyxpRUFBaUU7SUFDakUsNkNBQTZDO0lBQzdDLHFEQUFxRDtJQUNyRCxvRUFBb0U7SUFDcEUscURBQXFEO0lBQ3JELCtEQUErRDtJQUUvRCx1QkFBdUI7SUFDdkIsTUFBTSxlQUFlLEdBQXFCLEVBQUUsQ0FBQztJQUU3QyxPQUFPLENBQUMsR0FBRyxDQUFDLDRCQUE0QixlQUFlLENBQUMsTUFBTSxnQkFBZ0IsQ0FBQyxDQUFDO0lBRWhGLE9BQU87UUFDTCxlQUFlO1FBQ2Ysb0JBQW9CLEVBQUUsZUFBZSxDQUFDLE1BQU07UUFDNUMsUUFBUTtLQUNULENBQUM7QUFDSixDQUFDLENBQUM7QUF2QlcsUUFBQSxPQUFPLFdBdUJsQiIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEhhbmRsZXIgfSBmcm9tICdhd3MtbGFtYmRhJztcblxuaW50ZXJmYWNlIFNjYW5SZXN1bHQge1xuICB0cmlnZ2VyZWRTdG9ja3M6IFRyaWdnZXJlZFN0b2NrW107XG4gIHRyaWdnZXJlZFN0b2Nrc0NvdW50OiBudW1iZXI7XG4gIHNjYW5EYXRlOiBzdHJpbmc7XG59XG5cbmludGVyZmFjZSBUcmlnZ2VyZWRTdG9jayB7XG4gIHRpY2tlcjogc3RyaW5nO1xuICBjb21wYW55TmFtZTogc3RyaW5nO1xuICB0cmlnZ2VyVHlwZTogJzYwTUEnIHwgJzI1ME1BJztcbiAgY2xvc2VQcmljZTogbnVtYmVyO1xuICBtYVZhbHVlOiBudW1iZXI7XG4gIGJyZWFrdGhyb3VnaFBlcmNlbnQ6IG51bWJlcjtcbiAgdm9sdW1lOiBudW1iZXI7XG4gIGF2Z1ZvbHVtZTMwZDogbnVtYmVyO1xuICBwZWVyczogc3RyaW5nW107XG59XG5cbi8qKlxuICogVGVjaG5pY2FsIFNjYW5uZXIgTGFtYmRhXG4gKiBJZGVudGlmaWVzIHN0b2NrcyB3aGVyZSBwcmljZSBjcm9zc2VkIGFib3ZlIDYwLWRheSBvciAyNTAtZGF5IFNNQVxuICogUnVucyBkYWlseSBhdCA3IFBNIEVUIGFmdGVyIG1hcmtldCBjbG9zZVxuICovXG5leHBvcnQgY29uc3QgaGFuZGxlcjogSGFuZGxlcjx1bmtub3duLCBTY2FuUmVzdWx0PiA9IGFzeW5jICgpID0+IHtcbiAgY29uc3Qgc2NhbkRhdGUgPSBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCkuc3BsaXQoJ1QnKVswXTtcblxuICBjb25zb2xlLmxvZyhgW1RlY2huaWNhbFNjYW5uZXJdIFN0YXJ0aW5nIHNjYW4gZm9yICR7c2NhbkRhdGV9YCk7XG5cbiAgLy8gVE9ETzogSW1wbGVtZW50IGFjdHVhbCBzY2FubmluZyBsb2dpYzpcbiAgLy8gMS4gRmV0Y2ggc3RvY2sgdW5pdmVyc2UgZnJvbSBmaW5hbmNpYWwgQVBJIChQb2x5Z29uLmlvL0FscGFjYSlcbiAgLy8gMi4gQ2FsY3VsYXRlIDYwTUEgYW5kIDI1ME1BIGZvciBlYWNoIHN0b2NrXG4gIC8vIDMuIElkZW50aWZ5IGJyZWFrdGhyb3VnaHMgKHByaWNlIGNyb3NzZWQgYWJvdmUgTUEpXG4gIC8vIDQuIEVucmljaCB3aXRoIHBlZXIgZGF0YSAodG9wIDMgY29tcGV0aXRvcnMgYnkgR0lDUyBzdWItaW5kdXN0cnkpXG4gIC8vIDUuIEZldGNoIHJlbGF0aXZlIG1ldHJpY3M6IFAvRSwgUlNJLCBWb2x1bWUgZ3Jvd3RoXG4gIC8vIDYuIEZldGNoIG5ld3MgUkFHOiBsYXN0IDE0IGRheXMgb2YgaGVhZGxpbmVzIGFuZCBTRUMgZmlsaW5nc1xuXG4gIC8vIFBsYWNlaG9sZGVyIHJlc3BvbnNlXG4gIGNvbnN0IHRyaWdnZXJlZFN0b2NrczogVHJpZ2dlcmVkU3RvY2tbXSA9IFtdO1xuXG4gIGNvbnNvbGUubG9nKGBbVGVjaG5pY2FsU2Nhbm5lcl0gRm91bmQgJHt0cmlnZ2VyZWRTdG9ja3MubGVuZ3RofSBicmVha3Rocm91Z2hzYCk7XG5cbiAgcmV0dXJuIHtcbiAgICB0cmlnZ2VyZWRTdG9ja3MsXG4gICAgdHJpZ2dlcmVkU3RvY2tzQ291bnQ6IHRyaWdnZXJlZFN0b2Nrcy5sZW5ndGgsXG4gICAgc2NhbkRhdGUsXG4gIH07XG59O1xuIl19

@@ -1,0 +1,28 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handler = void 0;
+/**
+ * Retro Exam Lambda
+ * Reviews past predictions at T+60 days
+ * Compares original thoughtSignature against actual price performance
+ */
+const handler = async () => {
+    const examDate = new Date().toISOString().split('T')[0];
+    console.log(`[RetroExam] Running retrospective exam for ${examDate}`);
+    // TODO: Implement retrospective analysis:
+    // 1. Query Aurora for reports from T-60 days
+    // 2. Fetch original thoughtSignature and appendix
+    // 3. Pull actual price performance over 60-day window
+    // 4. Call Gemini 3 to review prior thinking
+    // 5. Identify where Bull or Bear logic deviated from reality
+    // 6. Calculate Logic Accuracy Score (1-100)
+    // 7. Store retrospective results
+    // Placeholder response
+    return {
+        examDate,
+        reportsReviewed: 0,
+        results: [],
+    };
+};
+exports.handler = handler;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJpbmRleC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFrQkE7Ozs7R0FJRztBQUNJLE1BQU0sT0FBTyxHQUFzQyxLQUFLLElBQUksRUFBRTtJQUNuRSxNQUFNLFFBQVEsR0FBRyxJQUFJLElBQUksRUFBRSxDQUFDLFdBQVcsRUFBRSxDQUFDLEtBQUssQ0FBQyxHQUFHLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQztJQUV4RCxPQUFPLENBQUMsR0FBRyxDQUFDLDhDQUE4QyxRQUFRLEVBQUUsQ0FBQyxDQUFDO0lBRXRFLDBDQUEwQztJQUMxQyw2Q0FBNkM7SUFDN0Msa0RBQWtEO0lBQ2xELHNEQUFzRDtJQUN0RCw0Q0FBNEM7SUFDNUMsNkRBQTZEO0lBQzdELDRDQUE0QztJQUM1QyxpQ0FBaUM7SUFFakMsdUJBQXVCO0lBQ3ZCLE9BQU87UUFDTCxRQUFRO1FBQ1IsZUFBZSxFQUFFLENBQUM7UUFDbEIsT0FBTyxFQUFFLEVBQUU7S0FDWixDQUFDO0FBQ0osQ0FBQyxDQUFDO0FBcEJXLFFBQUEsT0FBTyxXQW9CbEIiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBIYW5kbGVyIH0gZnJvbSAnYXdzLWxhbWJkYSc7XG5cbmludGVyZmFjZSBSZXRyb0V4YW1SZXN1bHQge1xuICBleGFtRGF0ZTogc3RyaW5nO1xuICByZXBvcnRzUmV2aWV3ZWQ6IG51bWJlcjtcbiAgcmVzdWx0czogUmV0cm9SZXN1bHRbXTtcbn1cblxuaW50ZXJmYWNlIFJldHJvUmVzdWx0IHtcbiAgcmVwb3J0SWQ6IHN0cmluZztcbiAgdGlja2VyOiBzdHJpbmc7XG4gIG9yaWdpbmFsRGF0ZTogc3RyaW5nO1xuICBvcmlnaW5hbFZlcmRpY3Q6IHN0cmluZztcbiAgYWN0dWFsUGVyZm9ybWFuY2U6IG51bWJlcjtcbiAgbG9naWNBY2N1cmFjeVNjb3JlOiBudW1iZXI7XG4gIGFuYWx5c2lzOiBzdHJpbmc7XG59XG5cbi8qKlxuICogUmV0cm8gRXhhbSBMYW1iZGFcbiAqIFJldmlld3MgcGFzdCBwcmVkaWN0aW9ucyBhdCBUKzYwIGRheXNcbiAqIENvbXBhcmVzIG9yaWdpbmFsIHRob3VnaHRTaWduYXR1cmUgYWdhaW5zdCBhY3R1YWwgcHJpY2UgcGVyZm9ybWFuY2VcbiAqL1xuZXhwb3J0IGNvbnN0IGhhbmRsZXI6IEhhbmRsZXI8dW5rbm93biwgUmV0cm9FeGFtUmVzdWx0PiA9IGFzeW5jICgpID0+IHtcbiAgY29uc3QgZXhhbURhdGUgPSBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCkuc3BsaXQoJ1QnKVswXTtcblxuICBjb25zb2xlLmxvZyhgW1JldHJvRXhhbV0gUnVubmluZyByZXRyb3NwZWN0aXZlIGV4YW0gZm9yICR7ZXhhbURhdGV9YCk7XG5cbiAgLy8gVE9ETzogSW1wbGVtZW50IHJldHJvc3BlY3RpdmUgYW5hbHlzaXM6XG4gIC8vIDEuIFF1ZXJ5IEF1cm9yYSBmb3IgcmVwb3J0cyBmcm9tIFQtNjAgZGF5c1xuICAvLyAyLiBGZXRjaCBvcmlnaW5hbCB0aG91Z2h0U2lnbmF0dXJlIGFuZCBhcHBlbmRpeFxuICAvLyAzLiBQdWxsIGFjdHVhbCBwcmljZSBwZXJmb3JtYW5jZSBvdmVyIDYwLWRheSB3aW5kb3dcbiAgLy8gNC4gQ2FsbCBHZW1pbmkgMyB0byByZXZpZXcgcHJpb3IgdGhpbmtpbmdcbiAgLy8gNS4gSWRlbnRpZnkgd2hlcmUgQnVsbCBvciBCZWFyIGxvZ2ljIGRldmlhdGVkIGZyb20gcmVhbGl0eVxuICAvLyA2LiBDYWxjdWxhdGUgTG9naWMgQWNjdXJhY3kgU2NvcmUgKDEtMTAwKVxuICAvLyA3LiBTdG9yZSByZXRyb3NwZWN0aXZlIHJlc3VsdHNcblxuICAvLyBQbGFjZWhvbGRlciByZXNwb25zZVxuICByZXR1cm4ge1xuICAgIGV4YW1EYXRlLFxuICAgIHJlcG9ydHNSZXZpZXdlZDogMCxcbiAgICByZXN1bHRzOiBbXSxcbiAgfTtcbn07XG4iXX0=

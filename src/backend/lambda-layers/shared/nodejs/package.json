@@ -1,0 +1,12 @@
+{
+  "name": "marketsage-shared-layer",
+  "version": "1.0.0",
+  "description": "Shared dependencies for MarketSage Lambda functions",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.400.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.159"
+  }
+}

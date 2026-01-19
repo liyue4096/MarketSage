@@ -1,0 +1,27 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handler = void 0;
+/**
+ * Report Persister Lambda
+ * Saves completed analysis reports to Aurora PostgreSQL
+ */
+const handler = async (event) => {
+    const { ticker } = event;
+    console.log(`[ReportPersister] Saving report for ${ticker}`);
+    // TODO: Implement database persistence:
+    // 1. Retrieve DB credentials from Secrets Manager
+    // 2. Connect to Aurora PostgreSQL
+    // 3. Insert report into stock_reports table
+    // 4. Store thoughtSignature for retrospective lookup
+    // 5. Index by ticker and date for efficient queries
+    const reportId = `rpt_${ticker}_${Date.now()}`;
+    // Placeholder response
+    return {
+        success: true,
+        reportId,
+        ticker,
+        timestamp: new Date().toISOString(),
+    };
+};
+exports.handler = handler;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJpbmRleC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFnQkE7OztHQUdHO0FBQ0ksTUFBTSxPQUFPLEdBQXVDLEtBQUssRUFBRSxLQUFLLEVBQUUsRUFBRTtJQUN6RSxNQUFNLEVBQUUsTUFBTSxFQUFFLEdBQUcsS0FBSyxDQUFDO0lBRXpCLE9BQU8sQ0FBQyxHQUFHLENBQUMsdUNBQXVDLE1BQU0sRUFBRSxDQUFDLENBQUM7SUFFN0Qsd0NBQXdDO0lBQ3hDLGtEQUFrRDtJQUNsRCxrQ0FBa0M7SUFDbEMsNENBQTRDO0lBQzVDLHFEQUFxRDtJQUNyRCxvREFBb0Q7SUFFcEQsTUFBTSxRQUFRLEdBQUcsT0FBTyxNQUFNLElBQUksSUFBSSxDQUFDLEdBQUcsRUFBRSxFQUFFLENBQUM7SUFFL0MsdUJBQXVCO0lBQ3ZCLE9BQU87UUFDTCxPQUFPLEVBQUUsSUFBSTtRQUNiLFFBQVE7UUFDUixNQUFNO1FBQ04sU0FBUyxFQUFFLElBQUksSUFBSSxFQUFFLENBQUMsV0FBVyxFQUFFO0tBQ3BDLENBQUM7QUFDSixDQUFDLENBQUM7QUFyQlcsUUFBQSxPQUFPLFdBcUJsQiIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEhhbmRsZXIgfSBmcm9tICdhd3MtbGFtYmRhJztcblxuaW50ZXJmYWNlIFJlcG9ydElucHV0IHtcbiAgdGlja2VyOiBzdHJpbmc7XG4gIHZlcmRpY3Q6IHVua25vd247XG4gIHRoZXNlczogdW5rbm93bjtcbiAgcmVidXR0YWxzOiB1bmtub3duO1xufVxuXG5pbnRlcmZhY2UgUmVwb3J0T3V0cHV0IHtcbiAgc3VjY2VzczogYm9vbGVhbjtcbiAgcmVwb3J0SWQ6IHN0cmluZztcbiAgdGlja2VyOiBzdHJpbmc7XG4gIHRpbWVzdGFtcDogc3RyaW5nO1xufVxuXG4vKipcbiAqIFJlcG9ydCBQZXJzaXN0ZXIgTGFtYmRhXG4gKiBTYXZlcyBjb21wbGV0ZWQgYW5hbHlzaXMgcmVwb3J0cyB0byBBdXJvcmEgUG9zdGdyZVNRTFxuICovXG5leHBvcnQgY29uc3QgaGFuZGxlcjogSGFuZGxlcjxSZXBvcnRJbnB1dCwgUmVwb3J0T3V0cHV0PiA9IGFzeW5jIChldmVudCkgPT4ge1xuICBjb25zdCB7IHRpY2tlciB9ID0gZXZlbnQ7XG5cbiAgY29uc29sZS5sb2coYFtSZXBvcnRQZXJzaXN0ZXJdIFNhdmluZyByZXBvcnQgZm9yICR7dGlja2VyfWApO1xuXG4gIC8vIFRPRE86IEltcGxlbWVudCBkYXRhYmFzZSBwZXJzaXN0ZW5jZTpcbiAgLy8gMS4gUmV0cmlldmUgREIgY3JlZGVudGlhbHMgZnJvbSBTZWNyZXRzIE1hbmFnZXJcbiAgLy8gMi4gQ29ubmVjdCB0byBBdXJvcmEgUG9zdGdyZVNRTFxuICAvLyAzLiBJbnNlcnQgcmVwb3J0IGludG8gc3RvY2tfcmVwb3J0cyB0YWJsZVxuICAvLyA0LiBTdG9yZSB0aG91Z2h0U2lnbmF0dXJlIGZvciByZXRyb3NwZWN0aXZlIGxvb2t1cFxuICAvLyA1LiBJbmRleCBieSB0aWNrZXIgYW5kIGRhdGUgZm9yIGVmZmljaWVudCBxdWVyaWVzXG5cbiAgY29uc3QgcmVwb3J0SWQgPSBgcnB0XyR7dGlja2VyfV8ke0RhdGUubm93KCl9YDtcblxuICAvLyBQbGFjZWhvbGRlciByZXNwb25zZVxuICByZXR1cm4ge1xuICAgIHN1Y2Nlc3M6IHRydWUsXG4gICAgcmVwb3J0SWQsXG4gICAgdGlja2VyLFxuICAgIHRpbWVzdGFtcDogbmV3IERhdGUoKS50b0lTT1N0cmluZygpLFxuICB9O1xufTtcbiJdfQ==
