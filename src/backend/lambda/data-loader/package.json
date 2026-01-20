@@ -1,0 +1,16 @@
+{
+  "name": "data-loader",
+  "version": "1.0.0",
+  "description": "Data loader Lambda for MarketSage",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.971.0",
+    "@types/aws-lambda": "^8.10.159",
+    "@types/pg": "^8.16.0",
+    "pg": "^8.17.1",
+    "typescript": "^5.9.3"
+  }
+}

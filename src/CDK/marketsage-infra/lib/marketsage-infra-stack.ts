@@ -107,6 +107,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         retention: cdk.Duration.days(7),
       },
       removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
+      enableDataApi: true, // Enable Data API for Query Editor
     });
 
     // ========================================
@@ -275,6 +276,24 @@ export class MarketsageInfraStack extends cdk.Stack {
       layers: [lambdaLayer],
     });
 
+    // Data Loader Lambda - Loads market data from Polygon into database
+    const dataLoaderLambda = new lambda.Function(this, 'DataLoaderLambda', {
+      functionName: 'marketsage-data-loader',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/data-loader')),
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [lambdaSecurityGroup],
+      timeout: cdk.Duration.minutes(15),
+      memorySize: 2048,
+      environment: {
+        ...commonEnv,
+        FINANCIAL_API_KEY_SECRET: 'marketsage/api/polygon',
+      },
+      layers: [lambdaLayer],
+    });
+
     // Grant Lambda functions access to secrets and database
     const allLambdas = [
       technicalScannerLambda,
@@ -285,6 +304,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       reportPersisterLambda,
       retroExamLambda,
       apiHandlerLambda,
+      dataLoaderLambda,
     ];
 
     allLambdas.forEach((fn) => {
@@ -303,7 +323,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       }));
     });
 
-    [technicalScannerLambda, retroExamLambda].forEach((fn) => {
+    [technicalScannerLambda, retroExamLambda, dataLoaderLambda].forEach((fn) => {
       fn.addToRolePolicy(new iam.PolicyStatement({
         actions: ['secretsmanager:GetSecretValue'],
         resources: [polygonSecretArn],

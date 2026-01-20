@@ -1,0 +1,1007 @@
+{"Item":{"symbol":{"S":"A"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Agilent Technologies"}}}
+{"Item":{"symbol":{"S":"AA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Alcoa Corp"}}}
+{"Item":{"symbol":{"S":"AAL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"American Airlines Gp"}}}
+{"Item":{"symbol":{"S":"AAON"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Aaon Inc"}}}
+{"Item":{"symbol":{"S":"AAPL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Apple Inc"}}}
+{"Item":{"symbol":{"S":"ABBV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Abbvie Inc"}}}
+{"Item":{"symbol":{"S":"ABNB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Airbnb Inc Cl A"}}}
+{"Item":{"symbol":{"S":"ABT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Abbott Laboratories"}}}
+{"Item":{"symbol":{"S":"ACGL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Arch Capital Grp Ltd"}}}
+{"Item":{"symbol":{"S":"ACHC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Acadia Healthcr Company"}}}
+{"Item":{"symbol":{"S":"ACI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Albertsons Companies Inc Cl A"}}}
+{"Item":{"symbol":{"S":"ACM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Aecom Technology Corp"}}}
+{"Item":{"symbol":{"S":"ACN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Accenture Plc"}}}
+{"Item":{"symbol":{"S":"ADBE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Adobe Systems Inc"}}}
+{"Item":{"symbol":{"S":"ADC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Agree Realty Corp"}}}
+{"Item":{"symbol":{"S":"ADI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Analog Devices"}}}
+{"Item":{"symbol":{"S":"ADM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Archer Daniels Midland"}}}
+{"Item":{"symbol":{"S":"ADP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Automatic Data Processing"}}}
+{"Item":{"symbol":{"S":"ADSK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Autodesk Inc"}}}
+{"Item":{"symbol":{"S":"ADT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"ADT Inc"}}}
+{"Item":{"symbol":{"S":"AEE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ameren Corp"}}}
+{"Item":{"symbol":{"S":"AEP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"American Electric Power Company"}}}
+{"Item":{"symbol":{"S":"AES"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Aes Corp"}}}
+{"Item":{"symbol":{"S":"AFG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"American Financial Group"}}}
+{"Item":{"symbol":{"S":"AFL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Aflac Inc"}}}
+{"Item":{"symbol":{"S":"AFRM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Affirm Holdings Inc Cl A"}}}
+{"Item":{"symbol":{"S":"AGCO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Agco Corp"}}}
+{"Item":{"symbol":{"S":"AGNC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Agnc Investment Corp"}}}
+{"Item":{"symbol":{"S":"AGO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Assured Guaranty Ltd"}}}
+{"Item":{"symbol":{"S":"AIG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"American International Group"}}}
+{"Item":{"symbol":{"S":"AIT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Applied Industrial Technologies"}}}
+{"Item":{"symbol":{"S":"AIZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Assurant Inc"}}}
+{"Item":{"symbol":{"S":"AJG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Arthur J. Gallagher & Company"}}}
+{"Item":{"symbol":{"S":"AKAM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Akamai Technologies"}}}
+{"Item":{"symbol":{"S":"AL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Air Lease Corp Cl A"}}}
+{"Item":{"symbol":{"S":"ALAB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Astera Labs Inc"}}}
+{"Item":{"symbol":{"S":"ALB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Albemarle Corp"}}}
+{"Item":{"symbol":{"S":"ALGM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Allegro Microsystems Inc"}}}
+{"Item":{"symbol":{"S":"ALGN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Align Technology"}}}
+{"Item":{"symbol":{"S":"ALK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Alaska Air Group"}}}
+{"Item":{"symbol":{"S":"ALL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Allstate Corp"}}}
+{"Item":{"symbol":{"S":"ALLE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Allegion Plc"}}}
+{"Item":{"symbol":{"S":"ALLY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ally Financial"}}}
+{"Item":{"symbol":{"S":"ALNY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Alnylam Pharmaceuticals"}}}
+{"Item":{"symbol":{"S":"ALSN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Allison Transmission Holdings"}}}
+{"Item":{"symbol":{"S":"AM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Antero Midstream Corp"}}}
+{"Item":{"symbol":{"S":"AMAT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Applied Materials"}}}
+{"Item":{"symbol":{"S":"AMCR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Amcor Plc"}}}
+{"Item":{"symbol":{"S":"AMD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Adv Micro Devices"}}}
+{"Item":{"symbol":{"S":"AME"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ametek Inc"}}}
+{"Item":{"symbol":{"S":"AMG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Affiliated Managers Group"}}}
+{"Item":{"symbol":{"S":"AMGN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Amgen Inc"}}}
+{"Item":{"symbol":{"S":"AMH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"American Homes 4 Rent"}}}
+{"Item":{"symbol":{"S":"AMKR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Amkor Technology"}}}
+{"Item":{"symbol":{"S":"AMP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ameriprise Financial Services"}}}
+{"Item":{"symbol":{"S":"AMT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"American Tower Corp"}}}
+{"Item":{"symbol":{"S":"AMTM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Amentum Holdings Inc"}}}
+{"Item":{"symbol":{"S":"AMZN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Amazon.com Inc"}}}
+{"Item":{"symbol":{"S":"AN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Autonation Inc"}}}
+{"Item":{"symbol":{"S":"ANET"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Arista Networks Inc"}}}
+{"Item":{"symbol":{"S":"AON"},"timestamp":{"S":"2025-11-25"},"name":{"S":"AON Plc"}}}
+{"Item":{"symbol":{"S":"AOS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Smith A.O. Corp"}}}
+{"Item":{"symbol":{"S":"APA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Apa Corp"}}}
+{"Item":{"symbol":{"S":"APD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Air Products and Chemicals"}}}
+{"Item":{"symbol":{"S":"APG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Api Group Corp"}}}
+{"Item":{"symbol":{"S":"APH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Amphenol Corp"}}}
+{"Item":{"symbol":{"S":"APLS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Apellis Pharmaceuticals Inc"}}}
+{"Item":{"symbol":{"S":"APO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Apollo Asset Management Inc"}}}
+{"Item":{"symbol":{"S":"APP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Applovin Corp Cl A"}}}
+{"Item":{"symbol":{"S":"APPF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Appfolio Cl A"}}}
+{"Item":{"symbol":{"S":"APTV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Aptiv Plc"}}}
+{"Item":{"symbol":{"S":"AR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Antero Resources Corp"}}}
+{"Item":{"symbol":{"S":"ARE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Alexandria Real Estate Equities"}}}
+{"Item":{"symbol":{"S":"ARES"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ares Management LP"}}}
+{"Item":{"symbol":{"S":"ARMK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Aramark Holdings Corp"}}}
+{"Item":{"symbol":{"S":"ARW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Arrow Electronics"}}}
+{"Item":{"symbol":{"S":"AS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Amer Sports Inc"}}}
+{"Item":{"symbol":{"S":"ASH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ashland Inc"}}}
+{"Item":{"symbol":{"S":"ASTS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ast Spacemobile Inc"}}}
+{"Item":{"symbol":{"S":"ATI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ati Inc"}}}
+{"Item":{"symbol":{"S":"ATO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Atmos Energy Corp"}}}
+{"Item":{"symbol":{"S":"ATR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Aptargroup"}}}
+{"Item":{"symbol":{"S":"AU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Anglogold Ashanti Ltd ADR"}}}
+{"Item":{"symbol":{"S":"AUR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Aurora Innovation Inc Cl A"}}}
+{"Item":{"symbol":{"S":"AVB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Avalonbay Communities"}}}
+{"Item":{"symbol":{"S":"AVGO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Broadcom Ltd"}}}
+{"Item":{"symbol":{"S":"AVT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Avnet Inc"}}}
+{"Item":{"symbol":{"S":"AVTR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Avantor Inc"}}}
+{"Item":{"symbol":{"S":"AVY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Avery Dennison Corp"}}}
+{"Item":{"symbol":{"S":"AWI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Armstrong World Industries Inc"}}}
+{"Item":{"symbol":{"S":"AWK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"American Water Works"}}}
+{"Item":{"symbol":{"S":"AXON"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Axon Enterprise Inc"}}}
+{"Item":{"symbol":{"S":"AXP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"American Express Company"}}}
+{"Item":{"symbol":{"S":"AXS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Axis Capital Holdings"}}}
+{"Item":{"symbol":{"S":"AXTA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Axalta Coating Systems Ltd"}}}
+{"Item":{"symbol":{"S":"AYI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Acuity Inc"}}}
+{"Item":{"symbol":{"S":"AZO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Autozone"}}}
+{"Item":{"symbol":{"S":"BA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Boeing Company"}}}
+{"Item":{"symbol":{"S":"BAC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bank of America Corp"}}}
+{"Item":{"symbol":{"S":"BAH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Booz Allen Hamilton Holding Corp"}}}
+{"Item":{"symbol":{"S":"BALL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ball Corporation"}}}
+{"Item":{"symbol":{"S":"BAM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Brookfield Asset Management Ltd"}}}
+{"Item":{"symbol":{"S":"BAX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Baxter International Inc"}}}
+{"Item":{"symbol":{"S":"BBWI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bath & Body Works Inc"}}}
+{"Item":{"symbol":{"S":"BBY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Best Buy Company"}}}
+{"Item":{"symbol":{"S":"BC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Brunswick Corp"}}}
+{"Item":{"symbol":{"S":"BDX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Becton Dickinson and Company"}}}
+{"Item":{"symbol":{"S":"BEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Franklin Resources"}}}
+{"Item":{"symbol":{"S":"BEPC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Brookfield Renewable Corp"}}}
+{"Item":{"symbol":{"S":"BF.A"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Brown Forman Inc Cl A"}}}
+{"Item":{"symbol":{"S":"BF.B"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Brown Forman Inc Cl B"}}}
+{"Item":{"symbol":{"S":"BFAM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bright Horizons Family Solutions Inc"}}}
+{"Item":{"symbol":{"S":"BG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bunge Ltd"}}}
+{"Item":{"symbol":{"S":"BHF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Brighthouse Financial Inc"}}}
+{"Item":{"symbol":{"S":"BIIB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Biogen Inc"}}}
+{"Item":{"symbol":{"S":"BILL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bill Holdings Inc"}}}
+{"Item":{"symbol":{"S":"BIO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bio-Rad Laboratories"}}}
+{"Item":{"symbol":{"S":"BIRK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Birkenstock Holding Plc"}}}
+{"Item":{"symbol":{"S":"BJ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bj's Wholesale Club Holdings Inc"}}}
+{"Item":{"symbol":{"S":"BK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bank of New York Mellon Corp"}}}
+{"Item":{"symbol":{"S":"BKNG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Booking Holdings Inc"}}}
+{"Item":{"symbol":{"S":"BKR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Baker Hughes Company"}}}
+{"Item":{"symbol":{"S":"BLD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Topbuild Corp"}}}
+{"Item":{"symbol":{"S":"BLDR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Builders Firstsource"}}}
+{"Item":{"symbol":{"S":"BLK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Blackrock Inc"}}}
+{"Item":{"symbol":{"S":"BMRN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Biomarin Pharmaceuticals"}}}
+{"Item":{"symbol":{"S":"BMY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bristol-Myers Squibb Company"}}}
+{"Item":{"symbol":{"S":"BOKF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bok Financial Corp"}}}
+{"Item":{"symbol":{"S":"BPOP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Popular Inc"}}}
+{"Item":{"symbol":{"S":"BR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Broadridge Financial Solutions Llc"}}}
+{"Item":{"symbol":{"S":"BRBR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bellring Brands Inc Cl A"}}}
+{"Item":{"symbol":{"S":"BRK.B"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Berkshire Hathaway Cl B"}}}
+{"Item":{"symbol":{"S":"BRKR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bruker Corp"}}}
+{"Item":{"symbol":{"S":"BRO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Brown & Brown"}}}
+{"Item":{"symbol":{"S":"BROS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dutch Bros Inc Cl A"}}}
+{"Item":{"symbol":{"S":"BRX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Brixmor Property Group Inc"}}}
+{"Item":{"symbol":{"S":"BSX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Boston Scientific Corp"}}}
+{"Item":{"symbol":{"S":"BSY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bentley Systems Inc Cl B"}}}
+{"Item":{"symbol":{"S":"BURL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Burlington Stores Inc"}}}
+{"Item":{"symbol":{"S":"BWA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Borgwarner Inc"}}}
+{"Item":{"symbol":{"S":"BWXT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bwx Technologies Inc"}}}
+{"Item":{"symbol":{"S":"BX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Blackstone Inc"}}}
+{"Item":{"symbol":{"S":"BXP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bxp Inc"}}}
+{"Item":{"symbol":{"S":"BYD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Boyd Gaming Corp"}}}
+{"Item":{"symbol":{"S":"C"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Citigroup Inc"}}}
+{"Item":{"symbol":{"S":"CACC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Credit Acceptance"}}}
+{"Item":{"symbol":{"S":"CACI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Caci International"}}}
+{"Item":{"symbol":{"S":"CAG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Conagra Brands Inc"}}}
+{"Item":{"symbol":{"S":"CAH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cardinal Health"}}}
+{"Item":{"symbol":{"S":"CAI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Caris Life Sciences Inc"}}}
+{"Item":{"symbol":{"S":"CAR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Avis Budget Group"}}}
+{"Item":{"symbol":{"S":"CARR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Carrier Global Corp"}}}
+{"Item":{"symbol":{"S":"CART"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Maplebear Inc [Instacart]"}}}
+{"Item":{"symbol":{"S":"CASY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Casey's General Stor"}}}
+{"Item":{"symbol":{"S":"CAT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Caterpillar Inc"}}}
+{"Item":{"symbol":{"S":"CAVA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cava Group Inc"}}}
+{"Item":{"symbol":{"S":"CB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Chubb Ltd"}}}
+{"Item":{"symbol":{"S":"CBOE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CBOE Global Markets Inc"}}}
+{"Item":{"symbol":{"S":"CBRE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CBRE Group Inc"}}}
+{"Item":{"symbol":{"S":"CBSH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Commerce Bancshares"}}}
+{"Item":{"symbol":{"S":"CCI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Crown Castle Inc"}}}
+{"Item":{"symbol":{"S":"CCK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Crown Cork & Seal Company"}}}
+{"Item":{"symbol":{"S":"CCL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Carnival Corp"}}}
+{"Item":{"symbol":{"S":"CDNS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cadence Design Sys"}}}
+{"Item":{"symbol":{"S":"CDW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CDW Corp"}}}
+{"Item":{"symbol":{"S":"CE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Celanese Corp"}}}
+{"Item":{"symbol":{"S":"CEG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Constellation Energy Corp"}}}
+{"Item":{"symbol":{"S":"CELH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Celsius Holdings Inc"}}}
+{"Item":{"symbol":{"S":"CERT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Certara Inc"}}}
+{"Item":{"symbol":{"S":"CF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cf Industries Holdings"}}}
+{"Item":{"symbol":{"S":"CFG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Citizens Financial Group Inc/Ri"}}}
+{"Item":{"symbol":{"S":"CFLT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Confluent Inc Cl A"}}}
+{"Item":{"symbol":{"S":"CFR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cullen/Frost Bankers"}}}
+{"Item":{"symbol":{"S":"CG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Carlyle Group"}}}
+{"Item":{"symbol":{"S":"CGNX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cognex Corp"}}}
+{"Item":{"symbol":{"S":"CHD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Church & Dwight Company"}}}
+{"Item":{"symbol":{"S":"CHDN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Churchill Downs IN"}}}
+{"Item":{"symbol":{"S":"CHE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Chemed Inc"}}}
+{"Item":{"symbol":{"S":"CHH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Choice Hotels International"}}}
+{"Item":{"symbol":{"S":"CHRD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Chord Energy Corp"}}}
+{"Item":{"symbol":{"S":"CHRW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"C.H. Robinson Ww"}}}
+{"Item":{"symbol":{"S":"CHTR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Charter Communications Inc"}}}
+{"Item":{"symbol":{"S":"CHWY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Chewy Inc"}}}
+{"Item":{"symbol":{"S":"CI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Cigna Group"}}}
+{"Item":{"symbol":{"S":"CIEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ciena Corp"}}}
+{"Item":{"symbol":{"S":"CINF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cincinnati Financial"}}}
+{"Item":{"symbol":{"S":"CIVI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Civitas Resources Inc"}}}
+{"Item":{"symbol":{"S":"CL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Colgate-Palmolive Company"}}}
+{"Item":{"symbol":{"S":"CLF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cleveland-Cliffs Inc"}}}
+{"Item":{"symbol":{"S":"CLH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Clean Harbors"}}}
+{"Item":{"symbol":{"S":"CLVT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Clarivate Analytics Plc"}}}
+{"Item":{"symbol":{"S":"CLX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Clorox Company"}}}
+{"Item":{"symbol":{"S":"CMA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Comerica Inc"}}}
+{"Item":{"symbol":{"S":"CMCSA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Comcast Corp A"}}}
+{"Item":{"symbol":{"S":"CME"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CME Group Inc"}}}
+{"Item":{"symbol":{"S":"CMG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Chipotle Mexican Grill"}}}
+{"Item":{"symbol":{"S":"CMI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cummins Inc"}}}
+{"Item":{"symbol":{"S":"CMS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cms Energy Corp"}}}
+{"Item":{"symbol":{"S":"CNA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CNA Financial Corp"}}}
+{"Item":{"symbol":{"S":"CNC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Centene Corp"}}}
+{"Item":{"symbol":{"S":"CNH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CNH Industrial N.V."}}}
+{"Item":{"symbol":{"S":"CNM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Core & Main Inc Cl A"}}}
+{"Item":{"symbol":{"S":"CNP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Centerpoint Energy Inc"}}}
+{"Item":{"symbol":{"S":"CNXC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Concentrix Corp"}}}
+{"Item":{"symbol":{"S":"COF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Capital One Financial Corp"}}}
+{"Item":{"symbol":{"S":"COHR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Coherent Corp"}}}
+{"Item":{"symbol":{"S":"COIN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Coinbase Global Inc Cl A"}}}
+{"Item":{"symbol":{"S":"COKE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Coca-Cola Consolidated Inc"}}}
+{"Item":{"symbol":{"S":"COLB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Columbia Banking Sys"}}}
+{"Item":{"symbol":{"S":"COLD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Americold Realty Trust"}}}
+{"Item":{"symbol":{"S":"COLM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Columbia Sprtswr"}}}
+{"Item":{"symbol":{"S":"COO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cooper Companies"}}}
+{"Item":{"symbol":{"S":"COP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Conocophillips"}}}
+{"Item":{"symbol":{"S":"COR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cencora Inc"}}}
+{"Item":{"symbol":{"S":"CORT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Corcept Therapeutics"}}}
+{"Item":{"symbol":{"S":"COST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Costco Wholesale"}}}
+{"Item":{"symbol":{"S":"COTY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Coty Inc"}}}
+{"Item":{"symbol":{"S":"CPAY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Corpay Inc"}}}
+{"Item":{"symbol":{"S":"CPB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Campbell's Company"}}}
+{"Item":{"symbol":{"S":"CPNG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Coupang Inc Cl A"}}}
+{"Item":{"symbol":{"S":"CPRT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Copart Inc"}}}
+{"Item":{"symbol":{"S":"CPT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Camden Property Trust"}}}
+{"Item":{"symbol":{"S":"CR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Crane Company"}}}
+{"Item":{"symbol":{"S":"CRCL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Circle Internet Group Inc Cl A"}}}
+{"Item":{"symbol":{"S":"CRH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CRH Plc ADR"}}}
+{"Item":{"symbol":{"S":"CRL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Charles River Laboratories Intl"}}}
+{"Item":{"symbol":{"S":"CRM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Salesforce Inc"}}}
+{"Item":{"symbol":{"S":"CROX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Crocs Inc"}}}
+{"Item":{"symbol":{"S":"CRS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Carpenter Technology Corp"}}}
+{"Item":{"symbol":{"S":"CRUS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cirrus Logic Inc"}}}
+{"Item":{"symbol":{"S":"CRWD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Crowdstrike Holdings Inc"}}}
+{"Item":{"symbol":{"S":"CSCO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cisco Systems Inc"}}}
+{"Item":{"symbol":{"S":"CSGP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Costar Group Inc"}}}
+{"Item":{"symbol":{"S":"CSL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Carlisle Companies Inc"}}}
+{"Item":{"symbol":{"S":"CSX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CSX Corp"}}}
+{"Item":{"symbol":{"S":"CTAS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cintas Corp"}}}
+{"Item":{"symbol":{"S":"CTRA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Coterra Energy Inc"}}}
+{"Item":{"symbol":{"S":"CTSH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cognizant Tech Sol"}}}
+{"Item":{"symbol":{"S":"CTVA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Corteva Inc"}}}
+{"Item":{"symbol":{"S":"CUBE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cubesmart"}}}
+{"Item":{"symbol":{"S":"CUZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cousins Properties Inc"}}}
+{"Item":{"symbol":{"S":"CVNA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Carvana Company Cl A"}}}
+{"Item":{"symbol":{"S":"CVS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"CVS Corp"}}}
+{"Item":{"symbol":{"S":"CVX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Chevron Corp"}}}
+{"Item":{"symbol":{"S":"CW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Curtiss-Wright Corp"}}}
+{"Item":{"symbol":{"S":"CWE.A"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Clearway Energy Inc [Cwen.A]"}}}
+{"Item":{"symbol":{"S":"CWEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Clearway Energy Inc Cl C"}}}
+{"Item":{"symbol":{"S":"CXT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Crane Nxt CO"}}}
+{"Item":{"symbol":{"S":"CZR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Caesars Entertainment Inc"}}}
+{"Item":{"symbol":{"S":"D"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dominion Energy Inc"}}}
+{"Item":{"symbol":{"S":"DAL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Delta Air Lines Inc"}}}
+{"Item":{"symbol":{"S":"DAR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Darling International Inc"}}}
+{"Item":{"symbol":{"S":"DASH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Doordash Inc Cl A"}}}
+{"Item":{"symbol":{"S":"DAY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dayforce Inc"}}}
+{"Item":{"symbol":{"S":"DBX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dropbox Inc"}}}
+{"Item":{"symbol":{"S":"DCI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Donaldson Company"}}}
+{"Item":{"symbol":{"S":"DD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dupont Denemours Inc"}}}
+{"Item":{"symbol":{"S":"DDOG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Datadog Inc Cl A"}}}
+{"Item":{"symbol":{"S":"DDS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dillard's"}}}
+{"Item":{"symbol":{"S":"DE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Deere & Company"}}}
+{"Item":{"symbol":{"S":"DECK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Deckers Outdoor Corp"}}}
+{"Item":{"symbol":{"S":"DELL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dell Technologies Inc"}}}
+{"Item":{"symbol":{"S":"DG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dollar General Corp"}}}
+{"Item":{"symbol":{"S":"DGX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Quest Diagnostics Inc"}}}
+{"Item":{"symbol":{"S":"DHI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"D.R. Horton"}}}
+{"Item":{"symbol":{"S":"DHR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Danaher Corp"}}}
+{"Item":{"symbol":{"S":"DINO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"HF Sinclair Corp"}}}
+{"Item":{"symbol":{"S":"DIS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Walt Disney Company"}}}
+{"Item":{"symbol":{"S":"DJT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Trump Media & Technology Group Corp"}}}
+{"Item":{"symbol":{"S":"DKNG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Draftkings Inc"}}}
+{"Item":{"symbol":{"S":"DKS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dick's Sporting Goods Inc"}}}
+{"Item":{"symbol":{"S":"DLB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dolby Laboratories"}}}
+{"Item":{"symbol":{"S":"DLR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Digital Realty Trust"}}}
+{"Item":{"symbol":{"S":"DLTR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dollar Tree Inc"}}}
+{"Item":{"symbol":{"S":"DOC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Healthpeak Properties Inc"}}}
+{"Item":{"symbol":{"S":"DOCS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Doximity Inc Cl A"}}}
+{"Item":{"symbol":{"S":"DOCU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Docusign Inc"}}}
+{"Item":{"symbol":{"S":"DOV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dover Corp"}}}
+{"Item":{"symbol":{"S":"DOW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dow Inc"}}}
+{"Item":{"symbol":{"S":"DOX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Amdocs Ltd Ord"}}}
+{"Item":{"symbol":{"S":"DPZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Domino's Pizza Inc"}}}
+{"Item":{"symbol":{"S":"DRI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Darden Restaurants"}}}
+{"Item":{"symbol":{"S":"DRS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Leonardo Drs Inc"}}}
+{"Item":{"symbol":{"S":"DT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dynatrace Inc"}}}
+{"Item":{"symbol":{"S":"DTE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dte Energy Company"}}}
+{"Item":{"symbol":{"S":"DTM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dt Midstream Inc"}}}
+{"Item":{"symbol":{"S":"DUK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Duke Energy Corp"}}}
+{"Item":{"symbol":{"S":"DUOL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Duolingo Inc Cl A"}}}
+{"Item":{"symbol":{"S":"DV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Doubleverify Holdings Inc"}}}
+{"Item":{"symbol":{"S":"DVA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Davita Healthcare Partners Inc"}}}
+{"Item":{"symbol":{"S":"DVN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Devon Energy Corp"}}}
+{"Item":{"symbol":{"S":"DXC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dxc Technology Company"}}}
+{"Item":{"symbol":{"S":"DXCM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dexcom Inc"}}}
+{"Item":{"symbol":{"S":"EA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Electronic Arts Inc"}}}
+{"Item":{"symbol":{"S":"EBAY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ebay Inc"}}}
+{"Item":{"symbol":{"S":"ECG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Everus Construction Group Inc"}}}
+{"Item":{"symbol":{"S":"ECL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ecolab Inc"}}}
+{"Item":{"symbol":{"S":"ED"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Consolidated Edison Company"}}}
+{"Item":{"symbol":{"S":"EEFT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Euronet Worldwide"}}}
+{"Item":{"symbol":{"S":"EFX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Equifax Inc"}}}
+{"Item":{"symbol":{"S":"EG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Everest Re Group"}}}
+{"Item":{"symbol":{"S":"EGP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Eastgroup Properties"}}}
+{"Item":{"symbol":{"S":"EHC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Encompass Health Corp"}}}
+{"Item":{"symbol":{"S":"EIX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Edison International"}}}
+{"Item":{"symbol":{"S":"EL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Estee Lauder Companies"}}}
+{"Item":{"symbol":{"S":"ELAN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Elanco Animal Health Inc"}}}
+{"Item":{"symbol":{"S":"ELF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"E.L.F. Beauty Inc"}}}
+{"Item":{"symbol":{"S":"ELS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Equity Lifestyle Properties"}}}
+{"Item":{"symbol":{"S":"ELV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Elevance Health Inc"}}}
+{"Item":{"symbol":{"S":"EME"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Emcor Group"}}}
+{"Item":{"symbol":{"S":"EMN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Eastman Chemical Company"}}}
+{"Item":{"symbol":{"S":"EMR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Emerson Electric Company"}}}
+{"Item":{"symbol":{"S":"ENPH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Enphase Energy Inc"}}}
+{"Item":{"symbol":{"S":"ENTG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Entegris Inc"}}}
+{"Item":{"symbol":{"S":"EOG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Eog Resources"}}}
+{"Item":{"symbol":{"S":"EPAM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Epam Systems Inc"}}}
+{"Item":{"symbol":{"S":"EPR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Entertainment Properties Trust"}}}
+{"Item":{"symbol":{"S":"EQH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Axa Equitable Holdings Inc"}}}
+{"Item":{"symbol":{"S":"EQIX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Equinix Inc"}}}
+{"Item":{"symbol":{"S":"EQR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Equity Residential"}}}
+{"Item":{"symbol":{"S":"EQT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Eqt Corp"}}}
+{"Item":{"symbol":{"S":"ES"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Eversource Energy"}}}
+{"Item":{"symbol":{"S":"ESAB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Esab Corp"}}}
+{"Item":{"symbol":{"S":"ESI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Element Solutions Inc"}}}
+{"Item":{"symbol":{"S":"ESS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Essex Property Trust"}}}
+{"Item":{"symbol":{"S":"ESTC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Elastic N.V."}}}
+{"Item":{"symbol":{"S":"ETN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Eaton Corp"}}}
+{"Item":{"symbol":{"S":"ETR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Entergy Corp"}}}
+{"Item":{"symbol":{"S":"ETSY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Etsy Inc"}}}
+{"Item":{"symbol":{"S":"EVR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Evercore Partners Inc"}}}
+{"Item":{"symbol":{"S":"EVRG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Evergy Inc"}}}
+{"Item":{"symbol":{"S":"EW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Edwards Lifesciences Corp"}}}
+{"Item":{"symbol":{"S":"EWBC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"East West Bancorp"}}}
+{"Item":{"symbol":{"S":"EXAS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Exact Sciences Cor"}}}
+{"Item":{"symbol":{"S":"EXC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Exelon Corp"}}}
+{"Item":{"symbol":{"S":"EXE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Expand Energy Corporation"}}}
+{"Item":{"symbol":{"S":"EXEL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Exelixis Inc"}}}
+{"Item":{"symbol":{"S":"EXLS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Exlservice Holdings"}}}
+{"Item":{"symbol":{"S":"EXP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Eagle Materials Inc"}}}
+{"Item":{"symbol":{"S":"EXPD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Expeditors Intl"}}}
+{"Item":{"symbol":{"S":"EXPE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Expedia Group Inc"}}}
+{"Item":{"symbol":{"S":"EXR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Extra Space Storage Inc"}}}
+{"Item":{"symbol":{"S":"F"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ford Motor Company"}}}
+{"Item":{"symbol":{"S":"FAF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"First American Corp"}}}
+{"Item":{"symbol":{"S":"FANG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Diamondback Energy"}}}
+{"Item":{"symbol":{"S":"FAST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fastenal Company"}}}
+{"Item":{"symbol":{"S":"FBIN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fortune Brands Innovations Inc"}}}
+{"Item":{"symbol":{"S":"FCN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fti Consulting"}}}
+{"Item":{"symbol":{"S":"FCNCA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"First Citizens Bancs"}}}
+{"Item":{"symbol":{"S":"FCX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Freeport-Mcmoran Inc"}}}
+{"Item":{"symbol":{"S":"FDS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Factset Research Systems Inc"}}}
+{"Item":{"symbol":{"S":"FDX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fedex Corp"}}}
+{"Item":{"symbol":{"S":"FE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Firstenergy Corp"}}}
+{"Item":{"symbol":{"S":"FERG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ferguson Enterprises Inc"}}}
+{"Item":{"symbol":{"S":"FFIV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"F5 Inc"}}}
+{"Item":{"symbol":{"S":"FHB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"First Hawaiian Inc"}}}
+{"Item":{"symbol":{"S":"FHN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"First Horizon Corp"}}}
+{"Item":{"symbol":{"S":"FICO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fair Isaac and Company"}}}
+{"Item":{"symbol":{"S":"FIS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fidelity National Information Services"}}}
+{"Item":{"symbol":{"S":"FITB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fifth Third Bancorp"}}}
+{"Item":{"symbol":{"S":"FIVE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Five Below Inc"}}}
+{"Item":{"symbol":{"S":"FIX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Comfort Systems USA"}}}
+{"Item":{"symbol":{"S":"FLEX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Flextronics Intl Ltd"}}}
+{"Item":{"symbol":{"S":"FLO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Flowers Foods"}}}
+{"Item":{"symbol":{"S":"FLS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Flowserve Corp"}}}
+{"Item":{"symbol":{"S":"FLUT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Flutter Entertainment Plc"}}}
+{"Item":{"symbol":{"S":"FMC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"FMC Corp"}}}
+{"Item":{"symbol":{"S":"FNB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"F.N.B. Corp"}}}
+{"Item":{"symbol":{"S":"FND"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Floor & Decor Holdings Inc"}}}
+{"Item":{"symbol":{"S":"FNF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fidelity National Financial"}}}
+{"Item":{"symbol":{"S":"FOUR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Shift4 Payments Inc"}}}
+{"Item":{"symbol":{"S":"FOX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fox Corp Cl B"}}}
+{"Item":{"symbol":{"S":"FOXA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fox Corp Cl A"}}}
+{"Item":{"symbol":{"S":"FR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"First Industrial Realty Trust"}}}
+{"Item":{"symbol":{"S":"FRHC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Awareness Group"}}}
+{"Item":{"symbol":{"S":"FRPT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Freshpet Inc CS"}}}
+{"Item":{"symbol":{"S":"FRT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Federal Realty Investment Trust"}}}
+{"Item":{"symbol":{"S":"FSLR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"First Solar Inc"}}}
+{"Item":{"symbol":{"S":"FTAI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ftai Aviation Ltd"}}}
+{"Item":{"symbol":{"S":"FTI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Technipfmc Plc"}}}
+{"Item":{"symbol":{"S":"FTNT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fortinet Inc"}}}
+{"Item":{"symbol":{"S":"FTV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Fortive Corp"}}}
+{"Item":{"symbol":{"S":"FWONA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Liberty Media Formula One Sr A"}}}
+{"Item":{"symbol":{"S":"FWONK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Liberty Media Formula One Sr C"}}}
+{"Item":{"symbol":{"S":"FYBR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Frontier Communications Parent Inc"}}}
+{"Item":{"symbol":{"S":"G"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Genpact Ltd"}}}
+{"Item":{"symbol":{"S":"GAP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gap Inc"}}}
+{"Item":{"symbol":{"S":"GD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"General Dynamics Corp"}}}
+{"Item":{"symbol":{"S":"GDDY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Godaddy Inc"}}}
+{"Item":{"symbol":{"S":"GE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"GE Aerospace"}}}
+{"Item":{"symbol":{"S":"GEHC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"GE Healthcare Technologies Inc"}}}
+{"Item":{"symbol":{"S":"GEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gen Digital Inc"}}}
+{"Item":{"symbol":{"S":"GEV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"GE Vernova Inc"}}}
+{"Item":{"symbol":{"S":"GFS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Globalfoundries Inc"}}}
+{"Item":{"symbol":{"S":"GGG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Graco Inc"}}}
+{"Item":{"symbol":{"S":"GILD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gilead Sciences Inc"}}}
+{"Item":{"symbol":{"S":"GIS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"General Mills"}}}
+{"Item":{"symbol":{"S":"GL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Globe Life Inc"}}}
+{"Item":{"symbol":{"S":"GLIBA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gci Liberty Inc Series A Gci"}}}
+{"Item":{"symbol":{"S":"GLIBK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gci Liberty Inc Series C Gci"}}}
+{"Item":{"symbol":{"S":"GLOB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Globant S.A."}}}
+{"Item":{"symbol":{"S":"GLPI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gaming & Leisure"}}}
+{"Item":{"symbol":{"S":"GLW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Corning Inc"}}}
+{"Item":{"symbol":{"S":"GM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"General Motors Company"}}}
+{"Item":{"symbol":{"S":"GME"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gamestop Corp"}}}
+{"Item":{"symbol":{"S":"GMED"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Globus Medical Inc"}}}
+{"Item":{"symbol":{"S":"GNRC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Generac Holdings Inc"}}}
+{"Item":{"symbol":{"S":"GNTX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gentex Corp"}}}
+{"Item":{"symbol":{"S":"GOOG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Alphabet Cl C"}}}
+{"Item":{"symbol":{"S":"GOOGL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Alphabet Cl A"}}}
+{"Item":{"symbol":{"S":"GPC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Genuine Parts Company"}}}
+{"Item":{"symbol":{"S":"GPK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Graphic Packaging Holding Company"}}}
+{"Item":{"symbol":{"S":"GPN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Global Payments Inc"}}}
+{"Item":{"symbol":{"S":"GRMN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Garmin Ltd"}}}
+{"Item":{"symbol":{"S":"GS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Goldman Sachs Group"}}}
+{"Item":{"symbol":{"S":"GTES"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gates Industrial Corp Plc"}}}
+{"Item":{"symbol":{"S":"GTLB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gitlab Inc Cl A"}}}
+{"Item":{"symbol":{"S":"GTM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zoominfo Technologies Inc Cl A"}}}
+{"Item":{"symbol":{"S":"GWRE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Guidewire Software Inc"}}}
+{"Item":{"symbol":{"S":"GWW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"W.W. Grainger"}}}
+{"Item":{"symbol":{"S":"GXO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gxo Logistics Inc"}}}
+{"Item":{"symbol":{"S":"H"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hyatt Hotels Corp"}}}
+{"Item":{"symbol":{"S":"HAL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Halliburton Company"}}}
+{"Item":{"symbol":{"S":"HALO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Halozyme Therapeutic"}}}
+{"Item":{"symbol":{"S":"HAS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hasbro Inc"}}}
+{"Item":{"symbol":{"S":"HAYW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hayward Holdings Inc"}}}
+{"Item":{"symbol":{"S":"HBAN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Huntington Bancshares Inc"}}}
+{"Item":{"symbol":{"S":"HCA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hca Holdings Inc"}}}
+{"Item":{"symbol":{"S":"HD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Home Depot"}}}
+{"Item":{"symbol":{"S":"HEI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Heico Corp"}}}
+{"Item":{"symbol":{"S":"HEI.A"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Heico Corp Cl A"}}}
+{"Item":{"symbol":{"S":"HHH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Howard Hughes Holdings Inc"}}}
+{"Item":{"symbol":{"S":"HIG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Hartford Insurance Group Inc"}}}
+{"Item":{"symbol":{"S":"HII"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Huntington Ingalls Industries"}}}
+{"Item":{"symbol":{"S":"HIW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Highwoods Properties"}}}
+{"Item":{"symbol":{"S":"HLI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Houlihan Lokey"}}}
+{"Item":{"symbol":{"S":"HLNE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hamilton Lane Inc Cl A"}}}
+{"Item":{"symbol":{"S":"HLT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hilton Inc"}}}
+{"Item":{"symbol":{"S":"HOG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Harley-Davidson Inc"}}}
+{"Item":{"symbol":{"S":"HOLX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hologic Inc"}}}
+{"Item":{"symbol":{"S":"HON"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Honeywell International Inc"}}}
+{"Item":{"symbol":{"S":"HOOD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Robinhood Markets Inc Cl A"}}}
+{"Item":{"symbol":{"S":"HPE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hewlett Packard Enterprise Comp"}}}
+{"Item":{"symbol":{"S":"HPQ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"HP Inc"}}}
+{"Item":{"symbol":{"S":"HR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Healthcare Realty Trust Inc."}}}
+{"Item":{"symbol":{"S":"HRB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"H&R Block"}}}
+{"Item":{"symbol":{"S":"HRL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hormel Foods Corp"}}}
+{"Item":{"symbol":{"S":"HSIC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Henry Schein Inc"}}}
+{"Item":{"symbol":{"S":"HST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Host Marriott Financial Trust"}}}
+{"Item":{"symbol":{"S":"HSY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hershey Foods Corp"}}}
+{"Item":{"symbol":{"S":"HUBB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hubbell Inc B"}}}
+{"Item":{"symbol":{"S":"HUBS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hubspot Inc"}}}
+{"Item":{"symbol":{"S":"HUM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Humana Inc"}}}
+{"Item":{"symbol":{"S":"HUN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Huntsman Corp"}}}
+{"Item":{"symbol":{"S":"HWM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Howmet Aerospace Inc"}}}
+{"Item":{"symbol":{"S":"HXL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Hexcel Corp"}}}
+{"Item":{"symbol":{"S":"IAC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Iac Inc"}}}
+{"Item":{"symbol":{"S":"IBKR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Interactive Brokers"}}}
+{"Item":{"symbol":{"S":"IBM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Intl Business Machines"}}}
+{"Item":{"symbol":{"S":"ICE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Intercontinental Exchange"}}}
+{"Item":{"symbol":{"S":"IDA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Idacorp Inc"}}}
+{"Item":{"symbol":{"S":"IDXX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Idexx Laboratories"}}}
+{"Item":{"symbol":{"S":"IEX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Idex Corp"}}}
+{"Item":{"symbol":{"S":"IFF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"International Flavors & Fragrances"}}}
+{"Item":{"symbol":{"S":"ILMN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Illumina Inc"}}}
+{"Item":{"symbol":{"S":"INCY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Incyte Corp"}}}
+{"Item":{"symbol":{"S":"INFA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Informatica Inc Cl A"}}}
+{"Item":{"symbol":{"S":"INGM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ingram Micro Holding Corp"}}}
+{"Item":{"symbol":{"S":"INGR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ingredion Inc"}}}
+{"Item":{"symbol":{"S":"INSM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Insmed Inc"}}}
+{"Item":{"symbol":{"S":"INSP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Inspire Medical Systems Inc"}}}
+{"Item":{"symbol":{"S":"INTC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Intel Corp"}}}
+{"Item":{"symbol":{"S":"INTU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Intuit Inc"}}}
+{"Item":{"symbol":{"S":"INVH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Invitation Homes Inc"}}}
+{"Item":{"symbol":{"S":"IONS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ionis Pharmaceuticals"}}}
+{"Item":{"symbol":{"S":"IOT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Samsara Inc Cl A"}}}
+{"Item":{"symbol":{"S":"IP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"International Paper Company"}}}
+{"Item":{"symbol":{"S":"IPG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Interpublic Group of Companies"}}}
+{"Item":{"symbol":{"S":"IPGP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ipg Photonics Corp"}}}
+{"Item":{"symbol":{"S":"IQV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Iqvia Holdings Inc"}}}
+{"Item":{"symbol":{"S":"IR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ingersoll Rand Inc"}}}
+{"Item":{"symbol":{"S":"IRDM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Iridium Comm Inc"}}}
+{"Item":{"symbol":{"S":"IRM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Iron Mountain Inc"}}}
+{"Item":{"symbol":{"S":"ISRG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Intuitive Surg Inc"}}}
+{"Item":{"symbol":{"S":"IT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Gartner Inc"}}}
+{"Item":{"symbol":{"S":"ITT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"ITT Inc"}}}
+{"Item":{"symbol":{"S":"ITW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Illinois Tool Works Inc"}}}
+{"Item":{"symbol":{"S":"IVZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Invesco Plc"}}}
+{"Item":{"symbol":{"S":"J"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Jacobs Engineering Group Inc"}}}
+{"Item":{"symbol":{"S":"JAZZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Jazz Pharma Plc"}}}
+{"Item":{"symbol":{"S":"JBHT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"J B Hunt Transport"}}}
+{"Item":{"symbol":{"S":"JBL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Jabil Circuit"}}}
+{"Item":{"symbol":{"S":"JCI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Johnson Controls Intl"}}}
+{"Item":{"symbol":{"S":"JEF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Jefferies Financial Group Inc"}}}
+{"Item":{"symbol":{"S":"JHG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Janus Henderson Group Plc"}}}
+{"Item":{"symbol":{"S":"JHX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"James Hardie Industries Se ADR"}}}
+{"Item":{"symbol":{"S":"JKHY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Jack Henry & Assoc"}}}
+{"Item":{"symbol":{"S":"JLL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Jones Lang Lasalle Inc"}}}
+{"Item":{"symbol":{"S":"JNJ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Johnson & Johnson"}}}
+{"Item":{"symbol":{"S":"JPM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"JP Morgan Chase & Company"}}}
+{"Item":{"symbol":{"S":"K"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kellanova"}}}
+{"Item":{"symbol":{"S":"KBR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"KBR Inc"}}}
+{"Item":{"symbol":{"S":"KD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kyndryl Hldgs Inc"}}}
+{"Item":{"symbol":{"S":"KDP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Keurig Dr Pepper Inc"}}}
+{"Item":{"symbol":{"S":"KEX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kirby Corp"}}}
+{"Item":{"symbol":{"S":"KEY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Keycorp"}}}
+{"Item":{"symbol":{"S":"KEYS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Keysight Technologies Inc"}}}
+{"Item":{"symbol":{"S":"KHC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kraft Heinz Company"}}}
+{"Item":{"symbol":{"S":"KIM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kimco Realty Corp"}}}
+{"Item":{"symbol":{"S":"KKR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"KKR & Company LP"}}}
+{"Item":{"symbol":{"S":"KLAC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"K L A-Tencor Corp"}}}
+{"Item":{"symbol":{"S":"KMB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kimberly-Clark Corp"}}}
+{"Item":{"symbol":{"S":"KMI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kinder Morgan Inc"}}}
+{"Item":{"symbol":{"S":"KMPR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kemper Corp"}}}
+{"Item":{"symbol":{"S":"KMX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Carmax Inc"}}}
+{"Item":{"symbol":{"S":"KNSL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kinsale Capital Group Inc"}}}
+{"Item":{"symbol":{"S":"KNX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Knight-Swift Transporation Inc"}}}
+{"Item":{"symbol":{"S":"KO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Coca-Cola Company"}}}
+{"Item":{"symbol":{"S":"KR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kroger Company"}}}
+{"Item":{"symbol":{"S":"KRC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kilroy Realty Corp"}}}
+{"Item":{"symbol":{"S":"KRMN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Karman Holdings Inc"}}}
+{"Item":{"symbol":{"S":"KVUE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Kenvue Inc"}}}
+{"Item":{"symbol":{"S":"L"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Loews Corp"}}}
+{"Item":{"symbol":{"S":"LAD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lithia Motors"}}}
+{"Item":{"symbol":{"S":"LAMR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lamar Advertis A"}}}
+{"Item":{"symbol":{"S":"LAZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lazard Inc"}}}
+{"Item":{"symbol":{"S":"LBRDA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Liberty Broadband Corp Sr A"}}}
+{"Item":{"symbol":{"S":"LBRDK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Liberty Broadband Corp Sr C"}}}
+{"Item":{"symbol":{"S":"LBTYA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Liberty Global Ltd Ord A"}}}
+{"Item":{"symbol":{"S":"LBTYK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Liberty Global Ltd Ord C"}}}
+{"Item":{"symbol":{"S":"LCID"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lucid Group Inc"}}}
+{"Item":{"symbol":{"S":"LDOS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Leidos Holdings Inc"}}}
+{"Item":{"symbol":{"S":"LEA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lear Corp"}}}
+{"Item":{"symbol":{"S":"LECO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lincoln Elec Holdings"}}}
+{"Item":{"symbol":{"S":"LEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lennar Corp"}}}
+{"Item":{"symbol":{"S":"LEN.B"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lennar Corp Cl B"}}}
+{"Item":{"symbol":{"S":"LFUS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Littelfuse Inc"}}}
+{"Item":{"symbol":{"S":"LH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Laboratory Corp of America Holdings"}}}
+{"Item":{"symbol":{"S":"LHX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"L3Harris Technologies Inc"}}}
+{"Item":{"symbol":{"S":"LII"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lennox International"}}}
+{"Item":{"symbol":{"S":"LIN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Linde Plc"}}}
+{"Item":{"symbol":{"S":"LINE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lineage Inc"}}}
+{"Item":{"symbol":{"S":"LITE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lumentum Holdings"}}}
+{"Item":{"symbol":{"S":"LKQ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"LKQ Corp"}}}
+{"Item":{"symbol":{"S":"LLY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Eli Lilly and Company"}}}
+{"Item":{"symbol":{"S":"LLYVA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Liberty Live Series A"}}}
+{"Item":{"symbol":{"S":"LLYVK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Liberty Live Series C"}}}
+{"Item":{"symbol":{"S":"LMT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lockheed Martin Corp"}}}
+{"Item":{"symbol":{"S":"LNC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lincoln National Corp"}}}
+{"Item":{"symbol":{"S":"LNG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cheniere Energy"}}}
+{"Item":{"symbol":{"S":"LNT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Alliant Energy Corp"}}}
+{"Item":{"symbol":{"S":"LOAR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Loar Holdings Inc"}}}
+{"Item":{"symbol":{"S":"LOPE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Grand Canyon Educati"}}}
+{"Item":{"symbol":{"S":"LOW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lowe's Companies"}}}
+{"Item":{"symbol":{"S":"LPLA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lpl Financial Holdings"}}}
+{"Item":{"symbol":{"S":"LPX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Louisiana-Pacific Corp"}}}
+{"Item":{"symbol":{"S":"LRCX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lam Research Corp"}}}
+{"Item":{"symbol":{"S":"LSCC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lattice Semicond"}}}
+{"Item":{"symbol":{"S":"LSTR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Landstar System"}}}
+{"Item":{"symbol":{"S":"LULU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lululemon Athletica"}}}
+{"Item":{"symbol":{"S":"LUV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Southwest Airlines Company"}}}
+{"Item":{"symbol":{"S":"LVS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Las Vegas Sands"}}}
+{"Item":{"symbol":{"S":"LW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lamb Weston Holdings Inc"}}}
+{"Item":{"symbol":{"S":"LYB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lyondellbasell Industries NV"}}}
+{"Item":{"symbol":{"S":"LYFT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Lyft Inc Cl A"}}}
+{"Item":{"symbol":{"S":"LYV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Live Nation Entertainment"}}}
+{"Item":{"symbol":{"S":"M"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Macy's Inc"}}}
+{"Item":{"symbol":{"S":"MA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mastercard Inc"}}}
+{"Item":{"symbol":{"S":"MAA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mid-America Apartment Communities"}}}
+{"Item":{"symbol":{"S":"MAN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Manpower Inc"}}}
+{"Item":{"symbol":{"S":"MANH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Manhattan Assoc"}}}
+{"Item":{"symbol":{"S":"MAR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Marriot Int Cl A"}}}
+{"Item":{"symbol":{"S":"MAS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Masco Corp"}}}
+{"Item":{"symbol":{"S":"MASI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Masimo Corp"}}}
+{"Item":{"symbol":{"S":"MAT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mattel Inc"}}}
+{"Item":{"symbol":{"S":"MCD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"McDonald's Corp"}}}
+{"Item":{"symbol":{"S":"MCHP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Microchip Technology"}}}
+{"Item":{"symbol":{"S":"MCK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mckesson Corp"}}}
+{"Item":{"symbol":{"S":"MCO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Moody's Corp"}}}
+{"Item":{"symbol":{"S":"MDB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mongodb Inc Cl A"}}}
+{"Item":{"symbol":{"S":"MDLZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mondelez Intl Inc"}}}
+{"Item":{"symbol":{"S":"MDT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Medtronic Inc"}}}
+{"Item":{"symbol":{"S":"MDU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mdu Res Group Inc"}}}
+{"Item":{"symbol":{"S":"MEDP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Medpace Holdings Inc"}}}
+{"Item":{"symbol":{"S":"MET"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Metlife Inc"}}}
+{"Item":{"symbol":{"S":"META"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Meta Platforms Inc"}}}
+{"Item":{"symbol":{"S":"MGM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"MGM Resorts International"}}}
+{"Item":{"symbol":{"S":"MHK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mohawk Industries"}}}
+{"Item":{"symbol":{"S":"MIDD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Middleby Corp"}}}
+{"Item":{"symbol":{"S":"MKC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mccormick & Company"}}}
+{"Item":{"symbol":{"S":"MKL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Markel Corp"}}}
+{"Item":{"symbol":{"S":"MKSI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mks Inc"}}}
+{"Item":{"symbol":{"S":"MKTX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Marketaxess Holdings"}}}
+{"Item":{"symbol":{"S":"MLI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mueller Industries"}}}
+{"Item":{"symbol":{"S":"MLM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Martin Marietta Materials"}}}
+{"Item":{"symbol":{"S":"MMC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Marsh & Mclennan Companies"}}}
+{"Item":{"symbol":{"S":"MMM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"3M Company"}}}
+{"Item":{"symbol":{"S":"MNST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Monster Beverage Corp"}}}
+{"Item":{"symbol":{"S":"MO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Altria Group"}}}
+{"Item":{"symbol":{"S":"MOH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Molina Healthcare Inc"}}}
+{"Item":{"symbol":{"S":"MORN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Morningstar Inc"}}}
+{"Item":{"symbol":{"S":"MOS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mosaic Company"}}}
+{"Item":{"symbol":{"S":"MP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"MP Materials Corp"}}}
+{"Item":{"symbol":{"S":"MPC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Marathon Petroleum Corp"}}}
+{"Item":{"symbol":{"S":"MPW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Medical Properties Trust"}}}
+{"Item":{"symbol":{"S":"MPWR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Monolithic Power Sys"}}}
+{"Item":{"symbol":{"S":"MRK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Merck & Company"}}}
+{"Item":{"symbol":{"S":"MRNA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Moderna Inc"}}}
+{"Item":{"symbol":{"S":"MRP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Millrose Properties Inc"}}}
+{"Item":{"symbol":{"S":"MRVL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Marvell Technology Inc"}}}
+{"Item":{"symbol":{"S":"MS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Morgan Stanley"}}}
+{"Item":{"symbol":{"S":"MSA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Msa Safety Inc"}}}
+{"Item":{"symbol":{"S":"MSCI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"MSCI Inc"}}}
+{"Item":{"symbol":{"S":"MSFT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Microsoft Corp"}}}
+{"Item":{"symbol":{"S":"MSGS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Madison Square Garden Sports Corp"}}}
+{"Item":{"symbol":{"S":"MSI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Motorola Solutions"}}}
+{"Item":{"symbol":{"S":"MSM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Msc Industrial Direct Company"}}}
+{"Item":{"symbol":{"S":"MSTR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Strategy Inc"}}}
+{"Item":{"symbol":{"S":"MTB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"M&T Bank Corp"}}}
+{"Item":{"symbol":{"S":"MTCH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Match Group Inc"}}}
+{"Item":{"symbol":{"S":"MTD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mettler-Toledo International"}}}
+{"Item":{"symbol":{"S":"MTDR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Matador Resources Company"}}}
+{"Item":{"symbol":{"S":"MTG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mgic Investment Corp"}}}
+{"Item":{"symbol":{"S":"MTN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Vail Resorts"}}}
+{"Item":{"symbol":{"S":"MTSI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Macom Technology S"}}}
+{"Item":{"symbol":{"S":"MTZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Mastec Inc"}}}
+{"Item":{"symbol":{"S":"MU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Micron Technology"}}}
+{"Item":{"symbol":{"S":"MUSA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Murphy USA Inc"}}}
+{"Item":{"symbol":{"S":"NBIX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Neurocrine Bioscienc"}}}
+{"Item":{"symbol":{"S":"NCLH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Norwegian Cruise Ord"}}}
+{"Item":{"symbol":{"S":"NCNO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ncino Inc"}}}
+{"Item":{"symbol":{"S":"NDAQ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nasdaq Inc"}}}
+{"Item":{"symbol":{"S":"NDSN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nordson Corp"}}}
+{"Item":{"symbol":{"S":"NEE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nextera Energy"}}}
+{"Item":{"symbol":{"S":"NEM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Newmont Mining Corp"}}}
+{"Item":{"symbol":{"S":"NET"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Cloudflare Inc Cl A"}}}
+{"Item":{"symbol":{"S":"NEU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Newmarket Corp"}}}
+{"Item":{"symbol":{"S":"NFG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"National Fuel Gas Company"}}}
+{"Item":{"symbol":{"S":"NFLX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Netflix Inc"}}}
+{"Item":{"symbol":{"S":"NI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"NiSource Inc"}}}
+{"Item":{"symbol":{"S":"NIQ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Niq Global Intelligence Plc"}}}
+{"Item":{"symbol":{"S":"NKE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nike Inc"}}}
+{"Item":{"symbol":{"S":"NLY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Annaly Capital Management Inc"}}}
+{"Item":{"symbol":{"S":"NNN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"NNN REIT Inc"}}}
+{"Item":{"symbol":{"S":"NOC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Northrop Grumman Corp"}}}
+{"Item":{"symbol":{"S":"NOV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nov Inc"}}}
+{"Item":{"symbol":{"S":"NOW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Servicenow Inc"}}}
+{"Item":{"symbol":{"S":"NRG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"NRG Energy"}}}
+{"Item":{"symbol":{"S":"NSA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"National Storage Affiliates Tru"}}}
+{"Item":{"symbol":{"S":"NSC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Norfolk Southern Corp"}}}
+{"Item":{"symbol":{"S":"NTAP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Netapp Inc"}}}
+{"Item":{"symbol":{"S":"NTNX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nutanix Inc"}}}
+{"Item":{"symbol":{"S":"NTRA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Natera Inc"}}}
+{"Item":{"symbol":{"S":"NTRS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Northern Trust Corp"}}}
+{"Item":{"symbol":{"S":"NU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nu Holdings Ltd Cl A"}}}
+{"Item":{"symbol":{"S":"NUE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nucor Corp"}}}
+{"Item":{"symbol":{"S":"NVDA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nvidia Corp"}}}
+{"Item":{"symbol":{"S":"NVR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"NVR Inc"}}}
+{"Item":{"symbol":{"S":"NVST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Envista Holdings Corp"}}}
+{"Item":{"symbol":{"S":"NVT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nvent Electric Plc"}}}
+{"Item":{"symbol":{"S":"NWL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Newell Rubbermaid Inc"}}}
+{"Item":{"symbol":{"S":"NWS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"News Corp Cl B"}}}
+{"Item":{"symbol":{"S":"NWSA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"News Corp Cl A"}}}
+{"Item":{"symbol":{"S":"NXST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Nexstar Media Group Inc"}}}
+{"Item":{"symbol":{"S":"NYT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"New York Times Company"}}}
+{"Item":{"symbol":{"S":"O"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Realty Income Corp"}}}
+{"Item":{"symbol":{"S":"OC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Owens Corning Inc"}}}
+{"Item":{"symbol":{"S":"ODFL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Old Dominion Freight Line Inc"}}}
+{"Item":{"symbol":{"S":"OGE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Oge Energy Corp"}}}
+{"Item":{"symbol":{"S":"OGN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Organon & Co."}}}
+{"Item":{"symbol":{"S":"OHI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Omega Healthcare Investors"}}}
+{"Item":{"symbol":{"S":"OKE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Oneok Inc"}}}
+{"Item":{"symbol":{"S":"OKTA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Okta Inc Cl A"}}}
+{"Item":{"symbol":{"S":"OLED"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Universal Display"}}}
+{"Item":{"symbol":{"S":"OLLI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ollies Bargain CS"}}}
+{"Item":{"symbol":{"S":"OLN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Olin Corp"}}}
+{"Item":{"symbol":{"S":"OMC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Omnicom Group Inc"}}}
+{"Item":{"symbol":{"S":"OMF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Onemain Holdings Inc"}}}
+{"Item":{"symbol":{"S":"ON"},"timestamp":{"S":"2025-11-25"},"name":{"S":"On Semiconductor"}}}
+{"Item":{"symbol":{"S":"ONON"},"timestamp":{"S":"2025-11-25"},"name":{"S":"On Holding Ag Cl A"}}}
+{"Item":{"symbol":{"S":"ONTO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Onto Innovation Inc"}}}
+{"Item":{"symbol":{"S":"ORCL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Oracle Corp"}}}
+{"Item":{"symbol":{"S":"ORI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Old Republic International Corp"}}}
+{"Item":{"symbol":{"S":"ORLY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"O'Reilly Automotive"}}}
+{"Item":{"symbol":{"S":"OSK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Oshkosh Truck Corp"}}}
+{"Item":{"symbol":{"S":"OTIS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Otis Worldwide Corp"}}}
+{"Item":{"symbol":{"S":"OVV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ovintiv Inc"}}}
+{"Item":{"symbol":{"S":"OWL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Blue Owl Capital Inc"}}}
+{"Item":{"symbol":{"S":"OXY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Occidental Petroleum Corp"}}}
+{"Item":{"symbol":{"S":"OZK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bank Ozk"}}}
+{"Item":{"symbol":{"S":"PAG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Penske Automotive Group"}}}
+{"Item":{"symbol":{"S":"PANW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Palo Alto Networks Inc"}}}
+{"Item":{"symbol":{"S":"PATH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Uipath Inc Cl A"}}}
+{"Item":{"symbol":{"S":"PAYC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Paycom Software Inc"}}}
+{"Item":{"symbol":{"S":"PAYX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Paychex Inc"}}}
+{"Item":{"symbol":{"S":"PB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Prosperity Bancshares"}}}
+{"Item":{"symbol":{"S":"PCAR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Paccar Inc"}}}
+{"Item":{"symbol":{"S":"PCG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pacific Gas & Electric Company"}}}
+{"Item":{"symbol":{"S":"PCOR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Procore Technologies Inc"}}}
+{"Item":{"symbol":{"S":"PCTY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Paylocity Holdings Corp"}}}
+{"Item":{"symbol":{"S":"PEG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Public Service Enterprise Group Inc"}}}
+{"Item":{"symbol":{"S":"PEGA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pegasystems Inc"}}}
+{"Item":{"symbol":{"S":"PEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Penumbra Inc"}}}
+{"Item":{"symbol":{"S":"PENN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Penn Entertainment Inc"}}}
+{"Item":{"symbol":{"S":"PEP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pepsico Inc"}}}
+{"Item":{"symbol":{"S":"PFE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pfizer Inc"}}}
+{"Item":{"symbol":{"S":"PFG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Principal Financial Group Inc"}}}
+{"Item":{"symbol":{"S":"PFGC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Performance Food Group Company"}}}
+{"Item":{"symbol":{"S":"PG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Procter & Gamble Company"}}}
+{"Item":{"symbol":{"S":"PGR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Progressive Corp"}}}
+{"Item":{"symbol":{"S":"PH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Parker-Hannifin Corp"}}}
+{"Item":{"symbol":{"S":"PHM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pultegroup"}}}
+{"Item":{"symbol":{"S":"PINS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pinterest Inc"}}}
+{"Item":{"symbol":{"S":"PK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Park Hotels & Resorts Inc"}}}
+{"Item":{"symbol":{"S":"PKG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Packaging Corp of America"}}}
+{"Item":{"symbol":{"S":"PLD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Prologis Inc"}}}
+{"Item":{"symbol":{"S":"PLNT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Planet Fitness"}}}
+{"Item":{"symbol":{"S":"PLTR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Palantir Technologies Inc Cl A"}}}
+{"Item":{"symbol":{"S":"PM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Philip Morris International Inc"}}}
+{"Item":{"symbol":{"S":"PNC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"PNC Bank"}}}
+{"Item":{"symbol":{"S":"PNFP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pinnacle Finl Ptnrs"}}}
+{"Item":{"symbol":{"S":"PNR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pentair Ltd"}}}
+{"Item":{"symbol":{"S":"PNW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pinnacle West Capital Corp"}}}
+{"Item":{"symbol":{"S":"PODD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Insulet Corp"}}}
+{"Item":{"symbol":{"S":"POOL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pool Corp"}}}
+{"Item":{"symbol":{"S":"POST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Post Holdings Inc"}}}
+{"Item":{"symbol":{"S":"PPC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pilgrim's Pride"}}}
+{"Item":{"symbol":{"S":"PPG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"PPG Industries"}}}
+{"Item":{"symbol":{"S":"PPL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"PPL Corp"}}}
+{"Item":{"symbol":{"S":"PR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Permian Resources Corp"}}}
+{"Item":{"symbol":{"S":"PRGO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Perrigo Company"}}}
+{"Item":{"symbol":{"S":"PRI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Primerica Inc"}}}
+{"Item":{"symbol":{"S":"PRMB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Primo Water Corp"}}}
+{"Item":{"symbol":{"S":"PRU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Prudential Financial Inc"}}}
+{"Item":{"symbol":{"S":"PSA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Public Storage"}}}
+{"Item":{"symbol":{"S":"PSN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Parsons Corp"}}}
+{"Item":{"symbol":{"S":"PSTG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Pure Storage Inc"}}}
+{"Item":{"symbol":{"S":"PSX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Phillips 66"}}}
+{"Item":{"symbol":{"S":"PTC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ptc Inc"}}}
+{"Item":{"symbol":{"S":"PVH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Phillips-Van Heusen Corp"}}}
+{"Item":{"symbol":{"S":"PWR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Quanta Services"}}}
+{"Item":{"symbol":{"S":"PYPL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Paypal Holdings"}}}
+{"Item":{"symbol":{"S":"QCOM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Qualcomm Inc"}}}
+{"Item":{"symbol":{"S":"QGEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Qiagen N.V."}}}
+{"Item":{"symbol":{"S":"QRVO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Qorvo Inc"}}}
+{"Item":{"symbol":{"S":"QS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Quantumscape Corp"}}}
+{"Item":{"symbol":{"S":"QSR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Restaurant Brands International"}}}
+{"Item":{"symbol":{"S":"QXO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Qxo Inc"}}}
+{"Item":{"symbol":{"S":"R"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ryder System"}}}
+{"Item":{"symbol":{"S":"RAL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ralliant Corporation"}}}
+{"Item":{"symbol":{"S":"RARE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ultragenyx Pharmaceu"}}}
+{"Item":{"symbol":{"S":"RBA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rb Global Inc"}}}
+{"Item":{"symbol":{"S":"RBC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"RBC Bearings Inc"}}}
+{"Item":{"symbol":{"S":"RBLX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Roblox Corp Cl A"}}}
+{"Item":{"symbol":{"S":"RBRK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rubrik Inc Cl A"}}}
+{"Item":{"symbol":{"S":"RCL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Royal Caribbean Cruises Ltd"}}}
+{"Item":{"symbol":{"S":"RDDT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Reddit Inc Cl A"}}}
+{"Item":{"symbol":{"S":"REG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Regency Centers Corp"}}}
+{"Item":{"symbol":{"S":"REGN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Regeneron Pharmaceuticals"}}}
+{"Item":{"symbol":{"S":"REXR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rexford Industrial Realty Inc"}}}
+{"Item":{"symbol":{"S":"REYN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Reynolds Consumer Products Inc"}}}
+{"Item":{"symbol":{"S":"RF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Regions Financial Corp"}}}
+{"Item":{"symbol":{"S":"RGA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Reinsurance Group of America Inc"}}}
+{"Item":{"symbol":{"S":"RGEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Repligen Corp"}}}
+{"Item":{"symbol":{"S":"RGLD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Royal Gold Inc"}}}
+{"Item":{"symbol":{"S":"RH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rh Common Stock"}}}
+{"Item":{"symbol":{"S":"RHI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Robert Half Inc"}}}
+{"Item":{"symbol":{"S":"RITM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rithm Capital Corp"}}}
+{"Item":{"symbol":{"S":"RIVN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rivian Automotive Inc Cl A"}}}
+{"Item":{"symbol":{"S":"RJF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Raymond James Financial"}}}
+{"Item":{"symbol":{"S":"RKLB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rocket Lab Corporation"}}}
+{"Item":{"symbol":{"S":"RKT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rocket Companies Inc Cl A"}}}
+{"Item":{"symbol":{"S":"RL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ralph Lauren Corp"}}}
+{"Item":{"symbol":{"S":"RLI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rli Corp"}}}
+{"Item":{"symbol":{"S":"RMD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Resmed Inc"}}}
+{"Item":{"symbol":{"S":"RNG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ringcentral Inc"}}}
+{"Item":{"symbol":{"S":"RNR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Renaissancere Holdings Ltd"}}}
+{"Item":{"symbol":{"S":"ROIV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Roivant Sciences Ltd"}}}
+{"Item":{"symbol":{"S":"ROK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rockwell Automation Inc"}}}
+{"Item":{"symbol":{"S":"ROKU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Roku Inc"}}}
+{"Item":{"symbol":{"S":"ROL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rollins Inc"}}}
+{"Item":{"symbol":{"S":"ROP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Roper Industries"}}}
+{"Item":{"symbol":{"S":"ROST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ross Stores Inc"}}}
+{"Item":{"symbol":{"S":"RPM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"RPM International Inc"}}}
+{"Item":{"symbol":{"S":"RPRX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Royalty Pharma Plc Cl A"}}}
+{"Item":{"symbol":{"S":"RRC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Range Resources Corp"}}}
+{"Item":{"symbol":{"S":"RRX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Regal Rexnord Corp"}}}
+{"Item":{"symbol":{"S":"RS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Reliance Inc"}}}
+{"Item":{"symbol":{"S":"RSG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Republic Services"}}}
+{"Item":{"symbol":{"S":"RTX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rtx Corp"}}}
+{"Item":{"symbol":{"S":"RVMD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Revolution Medicines Inc"}}}
+{"Item":{"symbol":{"S":"RVTY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Revvity Inc"}}}
+{"Item":{"symbol":{"S":"RYAN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ryan Specialty Hldgs Inc"}}}
+{"Item":{"symbol":{"S":"RYN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Rayonier Inc REIT"}}}
+{"Item":{"symbol":{"S":"S"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sentinelone Inc Cl A"}}}
+{"Item":{"symbol":{"S":"SAIA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Saia Inc"}}}
+{"Item":{"symbol":{"S":"SAIC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Science Applications International"}}}
+{"Item":{"symbol":{"S":"SAIL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sailpoint Inc"}}}
+{"Item":{"symbol":{"S":"SAM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Boston Beer Company"}}}
+{"Item":{"symbol":{"S":"SARO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Standardaero Inc"}}}
+{"Item":{"symbol":{"S":"SBAC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"SBA Communications"}}}
+{"Item":{"symbol":{"S":"SBUX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Starbucks Corp"}}}
+{"Item":{"symbol":{"S":"SCCO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Southern Copper Corp"}}}
+{"Item":{"symbol":{"S":"SCHW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Charles Schwab Corp"}}}
+{"Item":{"symbol":{"S":"SCI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Service Corp International"}}}
+{"Item":{"symbol":{"S":"SEB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Seaboard Corp"}}}
+{"Item":{"symbol":{"S":"SEE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sealed Air Corp"}}}
+{"Item":{"symbol":{"S":"SEIC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sei Investments Company"}}}
+{"Item":{"symbol":{"S":"SF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Stifel Financial Corp"}}}
+{"Item":{"symbol":{"S":"SFD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Smithfield Foods Inc"}}}
+{"Item":{"symbol":{"S":"SFM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sprouts Farmers Market"}}}
+{"Item":{"symbol":{"S":"SGI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Somnigroup International Inc"}}}
+{"Item":{"symbol":{"S":"SHC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sotera Health Company"}}}
+{"Item":{"symbol":{"S":"SHW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sherwin-Williams Company"}}}
+{"Item":{"symbol":{"S":"SIRI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Siriusxm Holdings Inc"}}}
+{"Item":{"symbol":{"S":"SITE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Siteone Landscape Supply"}}}
+{"Item":{"symbol":{"S":"SJM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"J.M. Smucker Company"}}}
+{"Item":{"symbol":{"S":"SLB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Slb Limited"}}}
+{"Item":{"symbol":{"S":"SLGN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Silgan Holdings"}}}
+{"Item":{"symbol":{"S":"SLM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"SLM Corp"}}}
+{"Item":{"symbol":{"S":"SMCI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Super Micro Computer"}}}
+{"Item":{"symbol":{"S":"SMG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Scotts Miracle-Gro Company"}}}
+{"Item":{"symbol":{"S":"SMMT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Summit Therapeu ADR"}}}
+{"Item":{"symbol":{"S":"SN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sharkninja Inc"}}}
+{"Item":{"symbol":{"S":"SNA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Snap-On Inc"}}}
+{"Item":{"symbol":{"S":"SNDK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sandisk Corp"}}}
+{"Item":{"symbol":{"S":"SNDR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Schneider National Inc"}}}
+{"Item":{"symbol":{"S":"SNOW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Snowflake Inc Cl A"}}}
+{"Item":{"symbol":{"S":"SNPS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Synopsys Inc"}}}
+{"Item":{"symbol":{"S":"SNV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Synovus Financial Corp"}}}
+{"Item":{"symbol":{"S":"SNX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Synnex Corp"}}}
+{"Item":{"symbol":{"S":"SO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Southern Company"}}}
+{"Item":{"symbol":{"S":"SOFI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sofi Technologies Inc"}}}
+{"Item":{"symbol":{"S":"SOLS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Solstice Advanced Materials Inc"}}}
+{"Item":{"symbol":{"S":"SOLV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Solventum Corporation"}}}
+{"Item":{"symbol":{"S":"SON"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sonoco Products"}}}
+{"Item":{"symbol":{"S":"SPG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Simon Property Group"}}}
+{"Item":{"symbol":{"S":"SPGI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"S&P Global Inc"}}}
+{"Item":{"symbol":{"S":"SPOT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Spotify Technology S.A."}}}
+{"Item":{"symbol":{"S":"SPR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Spirit Aerosystems Holdings"}}}
+{"Item":{"symbol":{"S":"SRE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sempra"}}}
+{"Item":{"symbol":{"S":"SRPT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sarepta Therapeutics"}}}
+{"Item":{"symbol":{"S":"SSB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Southstate Bank Corporation"}}}
+{"Item":{"symbol":{"S":"SSD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Simpson Manufacturing Company"}}}
+{"Item":{"symbol":{"S":"SSNC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"SS&C Technologies"}}}
+{"Item":{"symbol":{"S":"ST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sensata Technologies Holding N.V."}}}
+{"Item":{"symbol":{"S":"STAG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Stag Industrial Inc"}}}
+{"Item":{"symbol":{"S":"STE"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Steris Corp"}}}
+{"Item":{"symbol":{"S":"STLD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Steel Dynamics Inc"}}}
+{"Item":{"symbol":{"S":"STT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"State Street Corp"}}}
+{"Item":{"symbol":{"S":"STWD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Starwood Property Trust"}}}
+{"Item":{"symbol":{"S":"STZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Constellation Brands Inc"}}}
+{"Item":{"symbol":{"S":"SUI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sun Communities"}}}
+{"Item":{"symbol":{"S":"SW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Smurfit Westrock Plc"}}}
+{"Item":{"symbol":{"S":"SWK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Stanley Black & Decker Inc"}}}
+{"Item":{"symbol":{"S":"SWKS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Skyworks Solutions"}}}
+{"Item":{"symbol":{"S":"SYF"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Synchrony Financial"}}}
+{"Item":{"symbol":{"S":"SYK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Stryker Corp"}}}
+{"Item":{"symbol":{"S":"SYY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Sysco Corp"}}}
+{"Item":{"symbol":{"S":"T"},"timestamp":{"S":"2025-11-25"},"name":{"S":"AT&T Inc"}}}
+{"Item":{"symbol":{"S":"TAP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Molson Coors Brewing Company"}}}
+{"Item":{"symbol":{"S":"TDC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Teradata Corp"}}}
+{"Item":{"symbol":{"S":"TDG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Transdigm Group Inc"}}}
+{"Item":{"symbol":{"S":"TDY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Teledyne Technologies Inc"}}}
+{"Item":{"symbol":{"S":"TEAM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Atlassian Corp"}}}
+{"Item":{"symbol":{"S":"TECH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Bio-Techne Corp"}}}
+{"Item":{"symbol":{"S":"TEM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tempus AI Cl A"}}}
+{"Item":{"symbol":{"S":"TER"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Teradyne Inc"}}}
+{"Item":{"symbol":{"S":"TFC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Truist Financial Corp"}}}
+{"Item":{"symbol":{"S":"TFSL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tfs Financial Corp"}}}
+{"Item":{"symbol":{"S":"TFX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Teleflex Inc"}}}
+{"Item":{"symbol":{"S":"TGT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Target Corp"}}}
+{"Item":{"symbol":{"S":"THC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tenet Healthcare Corp"}}}
+{"Item":{"symbol":{"S":"THG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Hanover Insurance Group"}}}
+{"Item":{"symbol":{"S":"THO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Thor Industries"}}}
+{"Item":{"symbol":{"S":"TIGO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Millicom International Cellular S.A."}}}
+{"Item":{"symbol":{"S":"TJX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"TJX Companies"}}}
+{"Item":{"symbol":{"S":"TKO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tko Group Holdings Inc Cl A"}}}
+{"Item":{"symbol":{"S":"TKR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Timken Company"}}}
+{"Item":{"symbol":{"S":"TLN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Talen Energy Corporation"}}}
+{"Item":{"symbol":{"S":"TMO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Thermo Fisher Scientific Inc"}}}
+{"Item":{"symbol":{"S":"TMUS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"T-Mobile US"}}}
+{"Item":{"symbol":{"S":"TNL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Travel + Leisure Co."}}}
+{"Item":{"symbol":{"S":"TOL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Toll Brothers Inc"}}}
+{"Item":{"symbol":{"S":"TOST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Toast Inc Cl A"}}}
+{"Item":{"symbol":{"S":"TPG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tpg Inc Cl A"}}}
+{"Item":{"symbol":{"S":"TPL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Texas Pacific Land Trust"}}}
+{"Item":{"symbol":{"S":"TPR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tapestry Inc"}}}
+{"Item":{"symbol":{"S":"TREX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Trex Company"}}}
+{"Item":{"symbol":{"S":"TRGP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Targa Resources"}}}
+{"Item":{"symbol":{"S":"TRMB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Trimble Navigation"}}}
+{"Item":{"symbol":{"S":"TROW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"T Rowe Price Group"}}}
+{"Item":{"symbol":{"S":"TRU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Transunion"}}}
+{"Item":{"symbol":{"S":"TRV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"The Travelers Companies Inc"}}}
+{"Item":{"symbol":{"S":"TSCO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tractor Supply Company"}}}
+{"Item":{"symbol":{"S":"TSLA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tesla Inc"}}}
+{"Item":{"symbol":{"S":"TSN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tyson Foods"}}}
+{"Item":{"symbol":{"S":"TT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Trane Technologies Plc"}}}
+{"Item":{"symbol":{"S":"TTC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Toro Company"}}}
+{"Item":{"symbol":{"S":"TTD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Trade Desk Inc"}}}
+{"Item":{"symbol":{"S":"TTEK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tetra Tech Inc"}}}
+{"Item":{"symbol":{"S":"TTWO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Take-Two Interactive"}}}
+{"Item":{"symbol":{"S":"TW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tradeweb Markets Inc"}}}
+{"Item":{"symbol":{"S":"TWLO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Twilio"}}}
+{"Item":{"symbol":{"S":"TXN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Texas Instruments"}}}
+{"Item":{"symbol":{"S":"TXRH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Texas Roadhouse Inc"}}}
+{"Item":{"symbol":{"S":"TXT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Textron Inc"}}}
+{"Item":{"symbol":{"S":"TYL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Tyler Technologies"}}}
+{"Item":{"symbol":{"S":"U"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Unity Software Inc"}}}
+{"Item":{"symbol":{"S":"UA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Under Armour Inc Cl C"}}}
+{"Item":{"symbol":{"S":"UAA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Under Armour"}}}
+{"Item":{"symbol":{"S":"UAL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"United Airlines Holdings Inc"}}}
+{"Item":{"symbol":{"S":"UBER"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Uber Technologies Inc"}}}
+{"Item":{"symbol":{"S":"UDR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"United Dominion Realty Trust"}}}
+{"Item":{"symbol":{"S":"UGI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ugi Corp"}}}
+{"Item":{"symbol":{"S":"UHA.B"},"timestamp":{"S":"2025-11-25"},"name":{"S":"U-Haul Holding Series N Non-Voting"}}}
+{"Item":{"symbol":{"S":"UHAL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"U-Haul Holding Company"}}}
+{"Item":{"symbol":{"S":"UHS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Universal Health Services"}}}
+{"Item":{"symbol":{"S":"UI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ubiquiti Networks"}}}
+{"Item":{"symbol":{"S":"ULTA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ulta Beauty Inc"}}}
+{"Item":{"symbol":{"S":"UNH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Unitedhealth Group Inc"}}}
+{"Item":{"symbol":{"S":"UNM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Unumprovident Corp"}}}
+{"Item":{"symbol":{"S":"UNP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Union Pacific Corp"}}}
+{"Item":{"symbol":{"S":"UPS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"United Parcel Service"}}}
+{"Item":{"symbol":{"S":"URI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"United Rentals"}}}
+{"Item":{"symbol":{"S":"USB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"U.S. Bancorp"}}}
+{"Item":{"symbol":{"S":"USFD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"US Foods Holding"}}}
+{"Item":{"symbol":{"S":"UTHR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"United Therapeutic"}}}
+{"Item":{"symbol":{"S":"UWMC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Uwm Hldg Corp"}}}
+{"Item":{"symbol":{"S":"V"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Visa Inc"}}}
+{"Item":{"symbol":{"S":"VEEV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Veeva Systems Inc"}}}
+{"Item":{"symbol":{"S":"VFC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"V.F. Corp"}}}
+{"Item":{"symbol":{"S":"VICI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Vici Properties Inc"}}}
+{"Item":{"symbol":{"S":"VIK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Viking Holdings Ltd"}}}
+{"Item":{"symbol":{"S":"VIRT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Virtu Financial Cm A"}}}
+{"Item":{"symbol":{"S":"VKTX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Viking Thera"}}}
+{"Item":{"symbol":{"S":"VLO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Valero Energy Corp"}}}
+{"Item":{"symbol":{"S":"VLTO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Veralto Corporation"}}}
+{"Item":{"symbol":{"S":"VMC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Vulcan Materials Company"}}}
+{"Item":{"symbol":{"S":"VMI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Valmont Industries"}}}
+{"Item":{"symbol":{"S":"VNO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Vornado Realty Trust"}}}
+{"Item":{"symbol":{"S":"VNOM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Viper Energy Inc"}}}
+{"Item":{"symbol":{"S":"VNT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Vontier Corp"}}}
+{"Item":{"symbol":{"S":"VOYA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"VOYA Financial Inc"}}}
+{"Item":{"symbol":{"S":"VRSK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Verisk Analytics Inc"}}}
+{"Item":{"symbol":{"S":"VRSN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Verisign Inc"}}}
+{"Item":{"symbol":{"S":"VRT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Vertiv Holdings Llc."}}}
+{"Item":{"symbol":{"S":"VRTX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Vertex Pharmaceutic"}}}
+{"Item":{"symbol":{"S":"VST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Vistra Energy Corp"}}}
+{"Item":{"symbol":{"S":"VTR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Ventas Inc"}}}
+{"Item":{"symbol":{"S":"VTRS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Viatris Inc"}}}
+{"Item":{"symbol":{"S":"VVV"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Valvoline Inc"}}}
+{"Item":{"symbol":{"S":"VZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Verizon Communications Inc"}}}
+{"Item":{"symbol":{"S":"W"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wayfair Inc"}}}
+{"Item":{"symbol":{"S":"WAB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wabtec Corp"}}}
+{"Item":{"symbol":{"S":"WAL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Western Alliance Bancorp"}}}
+{"Item":{"symbol":{"S":"WAT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Waters Corp"}}}
+{"Item":{"symbol":{"S":"WBD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Discovery Inc Series A"}}}
+{"Item":{"symbol":{"S":"WBS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Webster Financial Corp"}}}
+{"Item":{"symbol":{"S":"WCC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wesco International"}}}
+{"Item":{"symbol":{"S":"WDAY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Workday Inc"}}}
+{"Item":{"symbol":{"S":"WDC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Western Digital Corp"}}}
+{"Item":{"symbol":{"S":"WEC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wisconsin Energy Corp"}}}
+{"Item":{"symbol":{"S":"WELL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Welltower Inc"}}}
+{"Item":{"symbol":{"S":"WEN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wendys Company"}}}
+{"Item":{"symbol":{"S":"WEX"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wex Inc"}}}
+{"Item":{"symbol":{"S":"WFC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wells Fargo & Company"}}}
+{"Item":{"symbol":{"S":"WFRD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Weatherford International Plc"}}}
+{"Item":{"symbol":{"S":"WH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wyndham Hotels & Resorts Inc"}}}
+{"Item":{"symbol":{"S":"WHR"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Whirlpool Corp"}}}
+{"Item":{"symbol":{"S":"WING"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wingstop Inc"}}}
+{"Item":{"symbol":{"S":"WLK"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Westlake Corp"}}}
+{"Item":{"symbol":{"S":"WM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Waste Management"}}}
+{"Item":{"symbol":{"S":"WMB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Williams Companies"}}}
+{"Item":{"symbol":{"S":"WMS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Advanced Drainage Systems Inc"}}}
+{"Item":{"symbol":{"S":"WMT"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Walmart Inc"}}}
+{"Item":{"symbol":{"S":"WPC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"W.P. Carey & Company Llc"}}}
+{"Item":{"symbol":{"S":"WRB"},"timestamp":{"S":"2025-11-25"},"name":{"S":"W.R. Berkley Corp"}}}
+{"Item":{"symbol":{"S":"WSC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Willscot Holdings Corp"}}}
+{"Item":{"symbol":{"S":"WSM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Williams-Sonoma"}}}
+{"Item":{"symbol":{"S":"WSO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Watsco Inc"}}}
+{"Item":{"symbol":{"S":"WST"},"timestamp":{"S":"2025-11-25"},"name":{"S":"West Pharmaceutical Services"}}}
+{"Item":{"symbol":{"S":"WTFC"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wintrust Financial Corp"}}}
+{"Item":{"symbol":{"S":"WTM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"White Mountains Insurance Group"}}}
+{"Item":{"symbol":{"S":"WTRG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Essential Utilities Inc"}}}
+{"Item":{"symbol":{"S":"WTW"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Willis Towers Watson Public Ltd"}}}
+{"Item":{"symbol":{"S":"WU"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Western Union Company"}}}
+{"Item":{"symbol":{"S":"WWD"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Woodward Inc"}}}
+{"Item":{"symbol":{"S":"WY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Weyerhaeuser Company"}}}
+{"Item":{"symbol":{"S":"WYNN"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Wynn Resorts Ltd"}}}
+{"Item":{"symbol":{"S":"XEL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"XCEL Energy Inc"}}}
+{"Item":{"symbol":{"S":"XOM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Exxon Mobil Corp"}}}
+{"Item":{"symbol":{"S":"XP"},"timestamp":{"S":"2025-11-25"},"name":{"S":"XP Inc Cl A"}}}
+{"Item":{"symbol":{"S":"XPO"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Xpo Inc"}}}
+{"Item":{"symbol":{"S":"XRAY"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Dentsply Sirona Inc"}}}
+{"Item":{"symbol":{"S":"XYL"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Xylem Inc"}}}
+{"Item":{"symbol":{"S":"XYZ"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Block Inc"}}}
+{"Item":{"symbol":{"S":"YETI"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Yeti Holdings Inc"}}}
+{"Item":{"symbol":{"S":"YUM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Yum! Brands"}}}
+{"Item":{"symbol":{"S":"Z"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zillow Group Cl C"}}}
+{"Item":{"symbol":{"S":"ZBH"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zimmer Biomet Holdings"}}}
+{"Item":{"symbol":{"S":"ZBRA"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zebra Technologies"}}}
+{"Item":{"symbol":{"S":"ZG"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zillow Grp Inc Cl A"}}}
+{"Item":{"symbol":{"S":"ZION"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zions Bancorp"}}}
+{"Item":{"symbol":{"S":"ZM"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zoom Communications Inc"}}}
+{"Item":{"symbol":{"S":"ZS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zscaler Inc"}}}
+{"Item":{"symbol":{"S":"ZTS"},"timestamp":{"S":"2025-11-25"},"name":{"S":"Zoetis Inc Cl A"}}}

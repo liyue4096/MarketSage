@@ -7,6 +7,9 @@
     "pg": "^8.11.0"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.159"
+    "@types/aws-lambda": "^8.10.159",
+    "@types/pg": "^8.16.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
