@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as stepfunctions from 'aws-cdk-lib/aws-stepfunctions';
@@ -108,6 +109,38 @@ export class MarketsageInfraStack extends cdk.Stack {
       },
       removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
       enableDataApi: true, // Enable Data API for Query Editor
+    });
+
+    // ========================================
+    // DynamoDB Table for Analysis Storage
+    // ========================================
+    // Single-table design for GAN analysis results
+    // Primary Key: PK (TICKER#ticker), SK (DATE#date#signature)
+    // GSI1: For lookup by thought_signature (retro-exam)
+    // GSI2: For listing by ticker with date sorting
+    const analysisTable = new dynamodb.Table(this, 'AnalysisTable', {
+      tableName: 'marketsage-analysis',
+      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    // GSI1: Query by thought signature (for retro-exam lookup)
+    analysisTable.addGlobalSecondaryIndex({
+      indexName: 'GSI1',
+      partitionKey: { name: 'GSI1PK', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'GSI1SK', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    // GSI2: Query by ticker with date sorting
+    analysisTable.addGlobalSecondaryIndex({
+      indexName: 'GSI2',
+      partitionKey: { name: 'GSI2PK', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'GSI2SK', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
     });
 
     // ========================================
@@ -294,6 +327,24 @@ export class MarketsageInfraStack extends cdk.Stack {
       layers: [lambdaLayer],
     });
 
+    // Analysis Store Lambda - Stores GAN analysis results to DynamoDB
+    const analysisStoreLambda = new lambda.Function(this, 'AnalysisStoreLambda', {
+      functionName: 'marketsage-analysis-store',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/analysis-store')),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        ANALYSIS_TABLE_NAME: analysisTable.tableName,
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      layers: [lambdaLayer],
+    });
+
+    // Grant DynamoDB access to analysis store Lambda
+    analysisTable.grantReadWriteData(analysisStoreLambda);
+
     // Grant Lambda functions access to secrets and database
     const allLambdas = [
       technicalScannerLambda,
@@ -374,9 +425,9 @@ export class MarketsageInfraStack extends cdk.Stack {
       resultPath: '$.verdict',
     });
 
-    // Step 5: Persist report
-    const persistTask = new tasks.LambdaInvoke(this, 'PersistReport', {
-      lambdaFunction: reportPersisterLambda,
+    // Step 5: Store analysis to DynamoDB
+    const storeAnalysisTask = new tasks.LambdaInvoke(this, 'StoreAnalysis', {
+      lambdaFunction: analysisStoreLambda,
       outputPath: '$.Payload',
     });
 
@@ -390,7 +441,7 @@ export class MarketsageInfraStack extends cdk.Stack {
     const stockProcessingChain = parallelThesis
       .next(rebuttalTask)
       .next(judgeTask)
-      .next(persistTask);
+      .next(storeAnalysisTask);
 
     processStockMap.itemProcessor(stockProcessingChain);
 
@@ -594,6 +645,12 @@ frontend:
       value: analysisStateMachine.stateMachineArn,
       description: 'Adversarial Analysis State Machine ARN',
       exportName: 'MarketsageStateMachineArn',
+    });
+
+    new cdk.CfnOutput(this, 'AnalysisTableName', {
+      value: analysisTable.tableName,
+      description: 'DynamoDB Analysis Table Name',
+      exportName: 'MarketsageAnalysisTable',
     });
   }
 }

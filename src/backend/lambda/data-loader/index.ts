@@ -42,7 +42,7 @@ interface AllTickersSnapshotResponse {
 }
 
 interface DataLoaderEvent {
-  action: 'migrate' | 'load-snapshot' | 'full' | 'query' | 'load-russell-1000' | 'load-agg' | 'load-russell-agg';
+  action: 'migrate' | 'load-snapshot' | 'full' | 'query' | 'query-sma' | 'load-russell-1000' | 'load-agg' | 'load-russell-agg' | 'load-sma' | 'load-russell-sma';
   tradeDate?: string; // YYYY-MM-DD format, defaults to previous trading day
   tickers?: string[]; // For query action or load-agg action
   russellData?: Array<{ ticker: string; name: string }>; // For load-russell-1000 action
@@ -76,6 +76,23 @@ interface AggregatesResponse {
   next_url?: string;
 }
 
+// Polygon SMA response types
+interface SMAValue {
+  timestamp: number;  // Unix millisecond timestamp
+  value: number;      // SMA value
+}
+
+interface SMAResponse {
+  results: {
+    underlying: {
+      url: string;
+    };
+    values: SMAValue[];
+  };
+  status: string;
+  request_id: string;
+}
+
 interface PriceRecord {
   trade_date: string;
   ticker: string;
@@ -87,6 +104,13 @@ interface PriceRecord {
   vw: number;
   change: number | null;      // Today's change from previous day
   change_pct: number | null;  // Today's change percentage
+  // Previous day OHLCV (optional, only from snapshot endpoint)
+  prev_o: number | null;
+  prev_h: number | null;
+  prev_l: number | null;
+  prev_c: number | null;
+  prev_v: number | null;
+  prev_vw: number | null;
 }
 
 interface DataLoaderResult {
@@ -125,8 +149,15 @@ CREATE TABLE IF NOT EXISTS price_history (
     c NUMERIC(12,4) NOT NULL,
     v BIGINT,
     vw NUMERIC(12,4),
-    change NUMERIC(12,4),       -- Today's change from previous day
-    change_pct NUMERIC(8,4),    -- Today's change percentage
+    change NUMERIC(18,10),       -- Today's change from previous day (high precision)
+    change_pct NUMERIC(18,10),   -- Today's change percentage (high precision)
+    -- Previous day OHLCV (optional, only from snapshot endpoint)
+    prev_o NUMERIC(12,4),
+    prev_h NUMERIC(12,4),
+    prev_l NUMERIC(12,4),
+    prev_c NUMERIC(12,4),
+    prev_v BIGINT,
+    prev_vw NUMERIC(12,4),
     PRIMARY KEY (trade_date, ticker),
     FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)
 ) PARTITION BY RANGE (trade_date);
@@ -150,7 +181,15 @@ END $$;
 -- Migration: Add change column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change NUMERIC(12,4);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change NUMERIC(18,10);
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Alter change column to high precision
+DO $$
+BEGIN
+    ALTER TABLE price_history ALTER COLUMN change TYPE NUMERIC(18,10);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -158,7 +197,63 @@ END $$;
 -- Migration: Add change_pct column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change_pct NUMERIC(8,4);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change_pct NUMERIC(18,10);
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Alter change_pct column to high precision
+DO $$
+BEGIN
+    ALTER TABLE price_history ALTER COLUMN change_pct TYPE NUMERIC(18,10);
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Add prev_o column if it doesn't exist
+DO $$
+BEGIN
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_o NUMERIC(12,4);
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Add prev_h column if it doesn't exist
+DO $$
+BEGIN
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_h NUMERIC(12,4);
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Add prev_l column if it doesn't exist
+DO $$
+BEGIN
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_l NUMERIC(12,4);
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Add prev_c column if it doesn't exist
+DO $$
+BEGIN
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_c NUMERIC(12,4);
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Add prev_v column if it doesn't exist
+DO $$
+BEGIN
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_v BIGINT;
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Add prev_vw column if it doesn't exist
+DO $$
+BEGIN
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_vw NUMERIC(12,4);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -183,6 +278,34 @@ CREATE TABLE IF NOT EXISTS russell_1000 (
     ticker VARCHAR(10) PRIMARY KEY,
     name TEXT NOT NULL
 );
+
+-- Table D: sma (Simple Moving Averages)
+-- Stores 20-day, 60-day, and 250-day SMA values for each ticker per date
+CREATE TABLE IF NOT EXISTS sma (
+    trade_date DATE NOT NULL,
+    ticker VARCHAR(10) NOT NULL,
+    sma_20 NUMERIC(12,4),   -- 20-day Simple Moving Average
+    sma_60 NUMERIC(12,4),   -- 60-day Simple Moving Average
+    sma_250 NUMERIC(12,4),  -- 250-day Simple Moving Average
+    last_updated TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (trade_date, ticker),
+    FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)
+) PARTITION BY RANGE (trade_date);
+
+-- Create partitions for SMA table (years 2020-2030)
+DO $$
+BEGIN
+    FOR year IN 2020..2030 LOOP
+        EXECUTE format(
+            'CREATE TABLE IF NOT EXISTS sma_%s PARTITION OF sma FOR VALUES FROM (%L) TO (%L)',
+            year,
+            year || '-01-01',
+            (year + 1) || '-01-01'
+        );
+    END LOOP;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_sma_ticker ON sma(ticker);
 `;
 
 // Get secret from Secrets Manager
@@ -267,6 +390,27 @@ function unixMsToDateString(unixMs: number): string {
   return date.toISOString().split('T')[0];
 }
 
+// Fetch SMA (Simple Moving Average) from Polygon for a ticker
+async function fetchSMA(
+  apiKey: string,
+  ticker: string,
+  timestamp: string,
+  window: number
+): Promise<SMAResponse> {
+  const url = `https://api.polygon.io/v1/indicators/sma/${ticker}?timestamp=${timestamp}&timespan=day&adjusted=true&window=${window}&series_type=close&order=desc&limit=1&apiKey=${apiKey}`;
+
+  console.log(`[DataLoader] Fetching SMA(${window}) for ${ticker} at ${timestamp}...`);
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Polygon SMA API error for ${ticker}: ${response.status} - ${errorText}`);
+  }
+
+  return response.json();
+}
+
 // Delay helper for rate limiting
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -322,10 +466,11 @@ async function loadSnapshotData(
         `, [snapshot.ticker, snapshot.ticker]);
         metadataInserted++;
 
-        // Upsert price history (including change values from snapshot)
+        // Upsert price history (including change values and prevDay from snapshot)
         await client.query(`
-          INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct,
+                                     prev_o, prev_h, prev_l, prev_c, prev_v, prev_vw)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
           ON CONFLICT (trade_date, ticker) DO UPDATE SET
             o = EXCLUDED.o,
             h = EXCLUDED.h,
@@ -334,7 +479,13 @@ async function loadSnapshotData(
             v = EXCLUDED.v,
             vw = EXCLUDED.vw,
             change = EXCLUDED.change,
-            change_pct = EXCLUDED.change_pct
+            change_pct = EXCLUDED.change_pct,
+            prev_o = EXCLUDED.prev_o,
+            prev_h = EXCLUDED.prev_h,
+            prev_l = EXCLUDED.prev_l,
+            prev_c = EXCLUDED.prev_c,
+            prev_v = EXCLUDED.prev_v,
+            prev_vw = EXCLUDED.prev_vw
         `, [
           tradeDate,
           snapshot.ticker,
@@ -346,6 +497,12 @@ async function loadSnapshotData(
           dayData.vw,
           snapshot.todaysChange ?? null,
           snapshot.todaysChangePerc ?? null,
+          snapshot.prevDay?.o ?? null,
+          snapshot.prevDay?.h ?? null,
+          snapshot.prevDay?.l ?? null,
+          snapshot.prevDay?.c ?? null,
+          snapshot.prevDay?.v != null ? Math.round(snapshot.prevDay.v) : null,
+          snapshot.prevDay?.vw ?? null,
         ]);
         pricesInserted++;
       }
@@ -366,25 +523,23 @@ async function loadSnapshotData(
   return { metadataInserted, pricesInserted };
 }
 
-// Get previous trading day (skip weekends)
-function getPreviousTradingDay(): string {
+// Get current trading day (today in ET)
+// Uses US Eastern Time since US markets operate on ET
+function getCurrentTradingDay(): string {
+  // Get current time in US Eastern Time
   const now = new Date();
-  let date = new Date(now);
-
-  // Go back one day
-  date.setDate(date.getDate() - 1);
-
-  // Skip weekends
-  while (date.getDay() === 0 || date.getDay() === 6) {
-    date.setDate(date.getDate() - 1);
-  }
-
-  return date.toISOString().split('T')[0];
+  const etOptions: Intl.DateTimeFormatOptions = {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  };
+  return now.toLocaleDateString('en-CA', etOptions); // en-CA gives YYYY-MM-DD format
 }
 
 export const handler: Handler<DataLoaderEvent, DataLoaderResult> = async (event) => {
   const action = event.action || 'full';
-  const tradeDate = event.tradeDate || getPreviousTradingDay();
+  const tradeDate = event.tradeDate || getCurrentTradingDay();
 
   console.log(`[DataLoader] Starting with action: ${action}, tradeDate: ${tradeDate}`);
 
@@ -446,7 +601,8 @@ export const handler: Handler<DataLoaderEvent, DataLoaderResult> = async (event)
 
       const result = await pool.query<PriceRecord>(
         `SELECT trade_date::text, ticker, o::float, h::float, l::float, c::float, v::float, vw::float,
-                change::float, change_pct::float
+                change::float, change_pct::float,
+                prev_o::float, prev_h::float, prev_l::float, prev_c::float, prev_v::float, prev_vw::float
          FROM price_history
          WHERE ticker = ANY($1) AND trade_date = $2
          ORDER BY ticker`,
@@ -457,6 +613,26 @@ export const handler: Handler<DataLoaderEvent, DataLoaderResult> = async (event)
         success: true,
         action: 'query',
         message: `Retrieved ${result.rows.length} records for ${tradeDate}`,
+        data: result.rows,
+      };
+    }
+
+    if (action === 'query-sma') {
+      const tickersToQuery = event.tickers || ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+
+      const result = await pool.query(
+        `SELECT trade_date::text, ticker, sma_20::float, sma_60::float, sma_250::float, last_updated
+         FROM sma
+         WHERE ticker = ANY($1)
+         ORDER BY trade_date DESC, ticker
+         LIMIT 100`,
+        [tickersToQuery]
+      );
+
+      return {
+        success: true,
+        action: 'query-sma',
+        message: `Retrieved ${result.rows.length} SMA records`,
         data: result.rows,
       };
     }
@@ -578,14 +754,15 @@ export const handler: Handler<DataLoaderEvent, DataLoaderResult> = async (event)
           console.log(`[DataLoader] Got ${aggResponse.resultsCount} bars for ${ticker}`);
 
           // Insert each bar as a price history record
-          // Note: Aggregates endpoint doesn't have change/change_pct, so we insert NULL
+          // Note: Aggregates endpoint doesn't have change/change_pct/prevDay, so we insert NULL
           for (const bar of aggResponse.results) {
             // Convert Unix millisecond timestamp to date string
             const barTradeDate = unixMsToDateString(bar.t);
 
             await client.query(`
-              INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL)
+              INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct,
+                                         prev_o, prev_h, prev_l, prev_c, prev_v, prev_vw)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
               ON CONFLICT (trade_date, ticker) DO UPDATE SET
                 o = EXCLUDED.o,
                 h = EXCLUDED.h,
@@ -700,15 +877,16 @@ export const handler: Handler<DataLoaderEvent, DataLoaderResult> = async (event)
             }
 
             // Insert each bar - commit per ticker to avoid large transactions
-            // Note: Aggregates endpoint doesn't have change/change_pct, so we insert NULL
+            // Note: Aggregates endpoint doesn't have change/change_pct/prevDay, so we insert NULL
             await client.query('BEGIN');
 
             for (const bar of aggResponse.results) {
               const barTradeDate = unixMsToDateString(bar.t);
 
               await client.query(`
-                INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL)
+                INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct,
+                                           prev_o, prev_h, prev_l, prev_c, prev_v, prev_vw)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
                 ON CONFLICT (trade_date, ticker) DO UPDATE SET
                   o = EXCLUDED.o,
                   h = EXCLUDED.h,
@@ -780,6 +958,210 @@ export const handler: Handler<DataLoaderEvent, DataLoaderResult> = async (event)
           vw: 0,
           change: null,
           change_pct: null,
+          prev_o: null,
+          prev_h: null,
+          prev_l: null,
+          prev_c: null,
+          prev_v: null,
+          prev_vw: null,
+        }] : undefined,
+      };
+    }
+
+    if (action === 'load-sma') {
+      const tickersToLoad = event.tickers;
+
+      if (!tickersToLoad || tickersToLoad.length === 0) {
+        return {
+          success: false,
+          action,
+          message: 'tickers is required for load-sma action',
+        };
+      }
+
+      // Get Polygon API key
+      const apiKey = await getPolygonApiKey();
+
+      const client = await pool.connect();
+      let smaRecordsInserted = 0;
+
+      try {
+        await client.query('BEGIN');
+
+        for (const ticker of tickersToLoad) {
+          // Fetch SMA for all three windows (20, 60, 250)
+          const [sma20Response, sma60Response, sma250Response] = await Promise.all([
+            fetchSMA(apiKey, ticker, tradeDate, 20),
+            fetchSMA(apiKey, ticker, tradeDate, 60),
+            fetchSMA(apiKey, ticker, tradeDate, 250),
+          ]);
+
+          const sma20 = sma20Response.results?.values?.[0]?.value ?? null;
+          const sma60 = sma60Response.results?.values?.[0]?.value ?? null;
+          const sma250 = sma250Response.results?.values?.[0]?.value ?? null;
+
+          // Get the trade date from response (use sma20 as primary, fall back to input tradeDate)
+          const smaTradeDate = sma20Response.results?.values?.[0]?.timestamp
+            ? unixMsToDateString(sma20Response.results.values[0].timestamp)
+            : tradeDate;
+
+          console.log(`[DataLoader] ${ticker} SMA values: 20=${sma20}, 60=${sma60}, 250=${sma250} for ${smaTradeDate}`);
+
+          // Upsert SMA record
+          await client.query(`
+            INSERT INTO sma (trade_date, ticker, sma_20, sma_60, sma_250, last_updated)
+            VALUES ($1, $2, $3, $4, $5, NOW())
+            ON CONFLICT (trade_date, ticker) DO UPDATE SET
+              sma_20 = EXCLUDED.sma_20,
+              sma_60 = EXCLUDED.sma_60,
+              sma_250 = EXCLUDED.sma_250,
+              last_updated = NOW()
+          `, [smaTradeDate, ticker, sma20, sma60, sma250]);
+          smaRecordsInserted++;
+
+          // Rate limiting: 300ms delay between ticker batches (3 API calls per ticker)
+          await delay(300);
+        }
+
+        await client.query('COMMIT');
+        console.log(`[DataLoader] Successfully loaded ${smaRecordsInserted} SMA records`);
+
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+
+      return {
+        success: true,
+        action,
+        message: `Successfully loaded SMA data for ${tickersToLoad.length} ticker(s) on ${tradeDate}`,
+        stats: {
+          tickersProcessed: tickersToLoad.length,
+          pricesInserted: smaRecordsInserted,
+        },
+      };
+    }
+
+    if (action === 'load-russell-sma') {
+      const batchStart = event.batchStart ?? 0;
+      const batchSize = event.batchSize ?? 50;
+
+      // Get all Russell 1000 tickers from database
+      const russellResult = await pool.query<{ ticker: string }>(
+        'SELECT ticker FROM russell_1000 ORDER BY ticker'
+      );
+      const allTickers = russellResult.rows.map(r => r.ticker);
+      const totalTickers = allTickers.length;
+
+      console.log(`[DataLoader] Found ${totalTickers} Russell 1000 tickers for SMA loading`);
+
+      // Get batch to process
+      const tickersToProcess = allTickers.slice(batchStart, batchStart + batchSize);
+
+      if (tickersToProcess.length === 0) {
+        return {
+          success: true,
+          action,
+          message: `All ${totalTickers} Russell 1000 tickers have been processed for SMA`,
+          stats: {
+            tickersProcessed: 0,
+            pricesInserted: 0,
+          },
+        };
+      }
+
+      console.log(`[DataLoader] Processing SMA batch: tickers ${batchStart} to ${batchStart + tickersToProcess.length - 1} (${tickersToProcess[0]} to ${tickersToProcess[tickersToProcess.length - 1]})`);
+
+      // Get Polygon API key
+      const apiKey = await getPolygonApiKey();
+
+      const client = await pool.connect();
+      let smaRecordsInserted = 0;
+      let tickersProcessed = 0;
+      let tickersFailed = 0;
+      const failedTickers: string[] = [];
+
+      try {
+        for (const ticker of tickersToProcess) {
+          try {
+            // Fetch SMA for all three windows (20, 60, 250)
+            const [sma20Response, sma60Response, sma250Response] = await Promise.all([
+              fetchSMA(apiKey, ticker, tradeDate, 20),
+              fetchSMA(apiKey, ticker, tradeDate, 60),
+              fetchSMA(apiKey, ticker, tradeDate, 250),
+            ]);
+
+            const sma20 = sma20Response.results?.values?.[0]?.value ?? null;
+            const sma60 = sma60Response.results?.values?.[0]?.value ?? null;
+            const sma250 = sma250Response.results?.values?.[0]?.value ?? null;
+
+            // Get the trade date from response
+            const smaTradeDate = sma20Response.results?.values?.[0]?.timestamp
+              ? unixMsToDateString(sma20Response.results.values[0].timestamp)
+              : tradeDate;
+
+            // Upsert SMA record
+            await client.query(`
+              INSERT INTO sma (trade_date, ticker, sma_20, sma_60, sma_250, last_updated)
+              VALUES ($1, $2, $3, $4, $5, NOW())
+              ON CONFLICT (trade_date, ticker) DO UPDATE SET
+                sma_20 = EXCLUDED.sma_20,
+                sma_60 = EXCLUDED.sma_60,
+                sma_250 = EXCLUDED.sma_250,
+                last_updated = NOW()
+            `, [smaTradeDate, ticker, sma20, sma60, sma250]);
+            smaRecordsInserted++;
+            tickersProcessed++;
+
+            console.log(`[DataLoader] ${ticker}: SMA(20)=${sma20?.toFixed(2)}, SMA(60)=${sma60?.toFixed(2)}, SMA(250)=${sma250?.toFixed(2)} (${tickersProcessed}/${tickersToProcess.length})`);
+
+            // Rate limiting: 300ms delay between ticker batches (3 API calls per ticker)
+            await delay(300);
+
+          } catch (tickerError) {
+            tickersFailed++;
+            failedTickers.push(ticker);
+            console.error(`[DataLoader] Error processing SMA for ${ticker}:`, tickerError instanceof Error ? tickerError.message : tickerError);
+
+            // Continue with next ticker instead of failing entire batch
+            await delay(500); // Longer delay after error
+          }
+        }
+
+      } finally {
+        client.release();
+      }
+
+      const nextBatchStart = batchStart + tickersToProcess.length;
+      const hasMore = nextBatchStart < totalTickers;
+
+      return {
+        success: true,
+        action,
+        message: `SMA Batch complete: ${tickersProcessed} tickers processed, ${tickersFailed} failed. ${hasMore ? `Next batch starts at ${nextBatchStart}` : 'All batches complete!'}`,
+        stats: {
+          tickersProcessed,
+          pricesInserted: smaRecordsInserted,
+        },
+        data: hasMore ? [{
+          trade_date: '',
+          ticker: 'NEXT_BATCH',
+          o: nextBatchStart,
+          h: totalTickers,
+          l: batchSize,
+          c: 0,
+          v: tickersFailed,
+          vw: 0,
+          change: null,
+          change_pct: null,
+          prev_o: null,
+          prev_h: null,
+          prev_l: null,
+          prev_c: null,
+          prev_v: null,
+          prev_vw: null,
         }] : undefined,
       };
     }

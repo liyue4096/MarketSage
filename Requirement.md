@@ -29,10 +29,13 @@ Instead of a single AI summary, the system runs a multi-turn debate:
 - **Agent A (The Bull):** Mandated to find growth catalysts, momentum, and sector leadership
 - **Agent B (The Bear):** Mandated to identify valuation traps, structural risks, and peer-relative weakness
 - **Interaction:**
-  1. **Round 1:** Independent thesis generation
-  2. **Round 2:** Direct Rebuttal (Agents must critique the other's evidence)
-  3. **Round 3:** Final Synthesis (A neutral "Judge" layer generates the summary)
+  1. **Round 1 (Opening):** The Bull and Bear generate independent memos. The Bull focuses on the MA breakthrough and positive catalysts; the Bear focuses on valuation traps and peer-relative risks.
+  2. **Round 2 (First Rebuttal):** The Bull critiques the Bear's logic; the Bear critiques the Bull's news citations.
+  3. **Round 3 (Final Defense):** Each agent provides a closing argument specifically addressing why the target stock is a better/worse opportunity than the 3 sector peers.
+  4. **Round 4 (The Judge):** A neutral "Investment Committee Chair" agent reviews the entire transcript.
 - **Persistence:** The system must store the `thoughtSignature` (Logic DNA) for the 2-month retrospective
+- **Output:** Generates the `SummaryConsensus`, `ConfidenceScore`, and `LogicAppendix`.
+- **Logic DNA:** Captures the `thoughtSignature` for the 2-month Retro-Exam.
 
 ### 3.3 The Retro-Exam (Accountability Engine)
 - **Trigger:** Automated execution at T+60 Days

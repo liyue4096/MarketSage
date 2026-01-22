@@ -1,0 +1,311 @@
+/**
+ * Analysis Store Lambda
+ * Stores GAN loop analysis results into DynamoDB
+ *
+ * Table Design:
+ * - Primary Key: PK (ticker#trigger_date), SK (thought_signature)
+ * - GSI1: thought_signature (for retro-exam lookups)
+ * - GSI2: ticker (for listing all analyses by ticker)
+ *
+ * Single Table Design - all data in one item for efficient retrieval
+ */
+
+import { DynamoDBClient } from '../../lambda-layers/shared/nodejs/node_modules/@aws-sdk/client-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  QueryCommand,
+  GetCommand
+} from '../../lambda-layers/shared/nodejs/node_modules/@aws-sdk/lib-dynamodb';
+
+// Types for GAN analysis results
+interface ThesisPoint {
+  point: string;
+  evidence: string;
+  source?: string;
+  confidence: number;
+}
+
+interface RebuttalPoint {
+  originalPoint: string;
+  rebuttal: string;
+  evidence: string;
+  strengthOfRebuttal: number;
+}
+
+interface AgentOutput {
+  ticker: string;
+  role: 'BULL' | 'BEAR';
+  thesis: ThesisPoint[];
+  primaryCatalyst?: string;  // Bull
+  primaryRisk?: string;      // Bear
+  thinkingTrace: string;
+  timestamp: string;
+}
+
+interface RebuttalOutput {
+  ticker: string;
+  bullRebuttals: RebuttalPoint[];
+  bearRebuttals: RebuttalPoint[];
+  thinkingTrace: string;
+  timestamp: string;
+}
+
+interface JudgeOutput {
+  ticker: string;
+  verdict: 'Strong Buy' | 'Neutral' | 'Short';
+  confidence: number;
+  primaryCatalyst: string;
+  consensusSummary: string[];
+  reportContent: string;
+  thoughtSignature: string;
+  appendix: string;
+  timestamp: string;
+}
+
+interface StoreAnalysisEvent {
+  action: 'store-analysis' | 'query-analysis' | 'query-by-signature';
+  // For store-analysis
+  triggerDate?: string;
+  triggerType?: '60MA' | '250MA';
+  closePrice?: number;
+  peers?: string[];
+  bullOpening?: AgentOutput;
+  bearOpening?: AgentOutput;
+  rebuttals?: RebuttalOutput;
+  bullDefense?: AgentOutput;
+  bearDefense?: AgentOutput;
+  judge?: JudgeOutput;
+  // For query-analysis (by ticker)
+  ticker?: string;
+  // For query-by-signature
+  thoughtSignature?: string;
+}
+
+interface StoreAnalysisResult {
+  success: boolean;
+  action: string;
+  message: string;
+  thoughtSignature?: string;
+  data?: any;
+}
+
+// DynamoDB table name
+const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
+
+// DynamoDB client
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION || 'us-east-1',
+  ...(process.env.DYNAMODB_ENDPOINT && {
+    endpoint: process.env.DYNAMODB_ENDPOINT
+  })
+});
+
+const docClient = DynamoDBDocumentClient.from(client, {
+  marshallOptions: {
+    removeUndefinedValues: true,
+  }
+});
+
+// Store analysis results
+async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisResult> {
+  const {
+    triggerDate, triggerType, closePrice, peers,
+    bullOpening, bearOpening, rebuttals, bullDefense, bearDefense, judge
+  } = event;
+
+  if (!judge || !bullOpening || !bearOpening) {
+    throw new Error('Missing required analysis data (judge, bullOpening, bearOpening)');
+  }
+
+  const ticker = judge.ticker;
+  const thoughtSignature = judge.thoughtSignature;
+
+  // Single table design - store everything in one item
+  const item = {
+    // Primary Key
+    PK: `TICKER#${ticker}`,
+    SK: `DATE#${triggerDate}#${thoughtSignature}`,
+
+    // GSI1: For lookup by thought_signature (retro-exam)
+    GSI1PK: `SIG#${thoughtSignature}`,
+    GSI1SK: `TICKER#${ticker}`,
+
+    // GSI2: For listing by ticker with date sorting
+    GSI2PK: `TICKER#${ticker}`,
+    GSI2SK: `DATE#${triggerDate}`,
+
+    // Entity type for filtering
+    entityType: 'ANALYSIS_REPORT',
+
+    // Core fields
+    ticker,
+    triggerDate,
+    triggerType,
+    closePrice,
+    peers: peers || [],
+
+    // Judge verdict
+    verdict: judge.verdict,
+    confidence: judge.confidence,
+    primaryCatalyst: judge.primaryCatalyst,
+    consensusSummary: judge.consensusSummary,
+    reportContent: judge.reportContent,
+    thoughtSignature,
+    appendix: judge.appendix,
+
+    // Round 1: Opening Arguments
+    bullOpening: {
+      thesis: bullOpening.thesis,
+      primaryCatalyst: bullOpening.primaryCatalyst,
+      thinkingTrace: bullOpening.thinkingTrace,
+      timestamp: bullOpening.timestamp
+    },
+    bearOpening: {
+      thesis: bearOpening.thesis,
+      primaryRisk: bearOpening.primaryRisk,
+      thinkingTrace: bearOpening.thinkingTrace,
+      timestamp: bearOpening.timestamp
+    },
+
+    // Round 2: Rebuttals
+    rebuttals: rebuttals ? {
+      bullRebuttals: rebuttals.bullRebuttals,
+      bearRebuttals: rebuttals.bearRebuttals,
+      thinkingTrace: rebuttals.thinkingTrace,
+      timestamp: rebuttals.timestamp
+    } : null,
+
+    // Round 3: Final Defense
+    bullDefense: bullDefense ? {
+      thesis: bullDefense.thesis,
+      primaryCatalyst: bullDefense.primaryCatalyst,
+      thinkingTrace: bullDefense.thinkingTrace,
+      timestamp: bullDefense.timestamp
+    } : null,
+    bearDefense: bearDefense ? {
+      thesis: bearDefense.thesis,
+      primaryRisk: bearDefense.primaryRisk,
+      thinkingTrace: bearDefense.thinkingTrace,
+      timestamp: bearDefense.timestamp
+    } : null,
+
+    // Metadata
+    createdAt: new Date().toISOString(),
+
+    // TTL: Keep analyses for 2 years (optional, comment out if not needed)
+    // ttl: Math.floor(Date.now() / 1000) + (2 * 365 * 24 * 60 * 60)
+  };
+
+  await docClient.send(new PutCommand({
+    TableName: TABLE_NAME,
+    Item: item,
+    ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)'
+  }));
+
+  return {
+    success: true,
+    action: 'store-analysis',
+    message: `Analysis stored successfully for ${ticker} on ${triggerDate}`,
+    thoughtSignature
+  };
+}
+
+// Query analysis by ticker (returns most recent analyses)
+async function queryByTicker(ticker: string): Promise<StoreAnalysisResult> {
+  const result = await docClient.send(new QueryCommand({
+    TableName: TABLE_NAME,
+    IndexName: 'GSI2',
+    KeyConditionExpression: 'GSI2PK = :pk',
+    ExpressionAttributeValues: {
+      ':pk': `TICKER#${ticker}`
+    },
+    ScanIndexForward: false, // Most recent first
+    Limit: 10
+  }));
+
+  return {
+    success: true,
+    action: 'query-analysis',
+    message: `Found ${result.Items?.length || 0} analyses for ${ticker}`,
+    data: result.Items
+  };
+}
+
+// Query analysis by thought signature (for retro-exam)
+async function queryBySignature(thoughtSignature: string): Promise<StoreAnalysisResult> {
+  const result = await docClient.send(new QueryCommand({
+    TableName: TABLE_NAME,
+    IndexName: 'GSI1',
+    KeyConditionExpression: 'GSI1PK = :pk',
+    ExpressionAttributeValues: {
+      ':pk': `SIG#${thoughtSignature}`
+    },
+    Limit: 1
+  }));
+
+  if (!result.Items || result.Items.length === 0) {
+    return {
+      success: false,
+      action: 'query-by-signature',
+      message: `No analysis found for signature: ${thoughtSignature}`
+    };
+  }
+
+  return {
+    success: true,
+    action: 'query-by-signature',
+    message: 'Analysis found',
+    data: result.Items[0]
+  };
+}
+
+// Lambda handler
+type Handler<TEvent = any, TResult = any> = (event: TEvent, context: any) => Promise<TResult>;
+
+export const handler: Handler<StoreAnalysisEvent, StoreAnalysisResult> = async (event) => {
+  console.log('[AnalysisStore] Received event:', JSON.stringify(event, null, 2));
+
+  try {
+    switch (event.action) {
+      case 'store-analysis':
+        return await storeAnalysis(event);
+
+      case 'query-analysis':
+        if (!event.ticker) {
+          throw new Error('ticker is required for query-analysis');
+        }
+        return await queryByTicker(event.ticker);
+
+      case 'query-by-signature':
+        if (!event.thoughtSignature) {
+          throw new Error('thoughtSignature is required for query-by-signature');
+        }
+        return await queryBySignature(event.thoughtSignature);
+
+      default:
+        return {
+          success: false,
+          action: event.action || 'unknown',
+          message: `Unknown action: ${event.action}. Valid actions: store-analysis, query-analysis, query-by-signature`
+        };
+    }
+  } catch (error) {
+    console.error('[AnalysisStore] Error:', error);
+
+    // Handle conditional check failure (duplicate)
+    if ((error as any).name === 'ConditionalCheckFailedException') {
+      return {
+        success: false,
+        action: event.action || 'unknown',
+        message: 'Analysis with this signature already exists'
+      };
+    }
+
+    return {
+      success: false,
+      action: event.action || 'unknown',
+      message: `Error: ${(error as Error).message}`
+    };
+  }
+};
