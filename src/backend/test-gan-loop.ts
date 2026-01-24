@@ -1,3 +1,7 @@
+// Load environment variables from .env file
+import * as dotenv from './lambda-layers/shared/nodejs/node_modules/dotenv';
+dotenv.config();
+
 import { handler as bullHandler } from './lambda/bull-agent/index';
 import { handler as bearHandler } from './lambda/bear-agent/index';
 import { handler as rebuttalHandler } from './lambda/rebuttal-agent/index';
@@ -139,8 +143,8 @@ async function runGanLoop() {
 
     if (storeResult.success) {
         console.log(`Analysis stored successfully!`);
-        console.log(`Report ID: ${storeResult.reportId}`);
         console.log(`Thought Signature: ${storeResult.thoughtSignature}`);
+        console.log(`Message: ${storeResult.message}`);
     } else {
         console.error(`Failed to store analysis: ${storeResult.message}`);
     }

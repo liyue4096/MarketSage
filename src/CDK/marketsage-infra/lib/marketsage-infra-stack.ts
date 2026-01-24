@@ -115,33 +115,15 @@ export class MarketsageInfraStack extends cdk.Stack {
     // DynamoDB Table for Analysis Storage
     // ========================================
     // Single-table design for GAN analysis results
-    // Primary Key: PK (TICKER#ticker), SK (DATE#date#signature)
+    // Primary Key: PK = ticker#date (e.g., "AAPL#2026-01-22"), SK = thought_signature
     // GSI1: For lookup by thought_signature (retro-exam)
     // GSI2: For listing by ticker with date sorting
-    const analysisTable = new dynamodb.Table(this, 'AnalysisTable', {
-      tableName: 'marketsage-analysis',
-      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      pointInTimeRecovery: true,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-    });
-
-    // GSI1: Query by thought signature (for retro-exam lookup)
-    analysisTable.addGlobalSecondaryIndex({
-      indexName: 'GSI1',
-      partitionKey: { name: 'GSI1PK', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'GSI1SK', type: dynamodb.AttributeType.STRING },
-      projectionType: dynamodb.ProjectionType.ALL,
-    });
-
-    // GSI2: Query by ticker with date sorting
-    analysisTable.addGlobalSecondaryIndex({
-      indexName: 'GSI2',
-      partitionKey: { name: 'GSI2PK', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'GSI2SK', type: dynamodb.AttributeType.STRING },
-      projectionType: dynamodb.ProjectionType.ALL,
-    });
+    // Note: Table was created manually, referencing existing table
+    const analysisTable = dynamodb.Table.fromTableName(
+      this,
+      'AnalysisTable',
+      'marketsage-analysis'
+    );
 
     // ========================================
     // Lambda Layer for shared dependencies
@@ -327,6 +309,21 @@ export class MarketsageInfraStack extends cdk.Stack {
       layers: [lambdaLayer],
     });
 
+    // Signal Generator Lambda - Detects MA crossover signals for Russell 1000 at market close
+    const signalGeneratorLambda = new lambda.Function(this, 'SignalGeneratorLambda', {
+      functionName: 'marketsage-signal-generator',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/signal-generator')),
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [lambdaSecurityGroup],
+      timeout: cdk.Duration.minutes(10),
+      memorySize: 1024,
+      environment: commonEnv,
+      layers: [lambdaLayer],
+    });
+
     // Analysis Store Lambda - Stores GAN analysis results to DynamoDB
     const analysisStoreLambda = new lambda.Function(this, 'AnalysisStoreLambda', {
       functionName: 'marketsage-analysis-store',
@@ -356,6 +353,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       retroExamLambda,
       apiHandlerLambda,
       dataLoaderLambda,
+      signalGeneratorLambda,
     ];
 
     allLambdas.forEach((fn) => {
@@ -487,10 +485,97 @@ export class MarketsageInfraStack extends cdk.Stack {
     });
 
     // ========================================
+    // Step Functions - Market Data Pipeline
+    // ========================================
+    // Orchestrates: load-snapshot → load-russell-sma (loop) → generate-signals
+
+    // Step 1: Load price snapshot from Polygon
+    const loadSnapshotTask = new tasks.LambdaInvoke(this, 'LoadPriceSnapshot', {
+      lambdaFunction: dataLoaderLambda,
+      payload: stepfunctions.TaskInput.fromObject({
+        action: 'load-snapshot',
+      }),
+      resultPath: '$.snapshotResult',
+    });
+
+    // Step 2: Initialize SMA batch processing
+    const initSmaBatch = new stepfunctions.Pass(this, 'InitSmaBatch', {
+      result: stepfunctions.Result.fromObject({ batchStart: 0 }),
+      resultPath: '$.smaBatch',
+    });
+
+    // Step 2a: Load SMA data for current batch
+    const loadSmaBatchTask = new tasks.LambdaInvoke(this, 'LoadSmaBatch', {
+      lambdaFunction: dataLoaderLambda,
+      payload: stepfunctions.TaskInput.fromObject({
+        'action': 'load-russell-sma',
+        'batchStart.$': '$.smaBatch.batchStart',
+        'batchSize': 50,
+      }),
+      resultPath: '$.smaResult',
+    });
+
+    // Step 2b: Update batch state for next iteration (only if data exists)
+    const updateBatchState = new stepfunctions.Pass(this, 'UpdateBatchState', {
+      parameters: {
+        'batchStart.$': '$.smaResult.Payload.data[0].o',
+      },
+      resultPath: '$.smaBatch',
+    });
+
+    // Step 2c: Check if we need to continue looping
+    // Lambda returns data array only if hasMore=true, otherwise data is undefined
+    const checkMoreBatches = new stepfunctions.Choice(this, 'CheckMoreBatches');
+
+    // Step 3: Generate MA crossover signals
+    const generateSignalsTask = new tasks.LambdaInvoke(this, 'GenerateMaSignals', {
+      lambdaFunction: signalGeneratorLambda,
+      payload: stepfunctions.TaskInput.fromObject({
+        action: 'generate-signals',
+      }),
+      outputPath: '$.Payload',
+    });
+
+    // Build the SMA loop: load batch → check if more → (update state → loop) or (generate signals)
+    const smaLoop = loadSmaBatchTask
+      .next(checkMoreBatches
+        .when(
+          stepfunctions.Condition.isPresent('$.smaResult.Payload.data[0]'),
+          updateBatchState.next(loadSmaBatchTask) // More batches, update state and loop
+        )
+        .otherwise(generateSignalsTask) // Done with batches, generate signals
+      );
+
+    // Chain: snapshot → init batch → sma loop
+    const marketDataPipeline = loadSnapshotTask
+      .next(initSmaBatch)
+      .next(smaLoop);
+
+    const marketDataStateMachine = new stepfunctions.StateMachine(this, 'MarketDataPipelineStateMachine', {
+      stateMachineName: 'marketsage-market-data-pipeline',
+      definitionBody: stepfunctions.DefinitionBody.fromChainable(marketDataPipeline),
+      timeout: cdk.Duration.hours(2), // Increased timeout for batch processing
+      tracingEnabled: true,
+    });
+
+    // ========================================
     // EventBridge Rules - Scheduled Triggers
     // ========================================
 
+    // Market Data Pipeline at 4:30 PM ET (21:30 UTC during EST)
+    // Runs: load-snapshot → load-russell-sma → generate-signals
+    new events.Rule(this, 'MarketDataPipelineRule', {
+      ruleName: 'marketsage-market-data-pipeline',
+      schedule: events.Schedule.cron({
+        minute: '30',
+        hour: '21', // 21:30 UTC = 4:30 PM ET (EST)
+        weekDay: 'MON-FRI',
+      }),
+      targets: [new targets.SfnStateMachine(marketDataStateMachine)],
+    });
+
     // Daily analysis at 7 PM ET (00:00 UTC next day during EST, 23:00 UTC during EDT)
+    // Processes tickers with active signals generated by signal-generator
     new events.Rule(this, 'DailyAnalysisRule', {
       ruleName: 'marketsage-daily-analysis',
       schedule: events.Schedule.cron({

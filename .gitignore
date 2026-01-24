@@ -1,0 +1,35 @@
+# Environment variables (contains secrets)
+.env
+*.env
+.env.*
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.js.map
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Lambda deployment packages
+*.zip

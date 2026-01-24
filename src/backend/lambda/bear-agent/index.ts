@@ -17,7 +17,8 @@ interface AgentInput {
 interface ThesisPoint {
   point: string;
   evidence: string;
-  source?: string;
+  source: string;      // Required: URL or publication name
+  dataDate: string;    // Required: Date of the data point
   confidence: number;
 }
 
@@ -30,6 +31,7 @@ interface AgentOutput {
   timestamp: string;
 }
 
+// Get current date for grounding
 const currentDate = new Date().toLocaleDateString('en-US', {
   month: 'long', day: 'numeric', year: 'numeric'
 });
@@ -40,41 +42,84 @@ export const handler: Handler<AgentInput, AgentOutput> = async (event) => {
 
   const gemini = new GeminiClient();
 
-  const systemInstruction = `You are a skeptical Wall Street Bearish Analyst (Short Seller). Today's date is ${currentDate}.
-Your mandate is to identify valuation traps, structural risks, and peer-relative weakness.
-You are debating a Bullish Analyst. You must critique the "breakout" narrative.
+  /**
+   * REINFORCED SYSTEM INSTRUCTION
+   * Strict hierarchy: Live Search Data > Training Data
+   * Explicit date anchoring to prevent stale data usage
+   */
+  const systemInstruction = `You are a skeptical Wall Street Bearish Analyst (Short Seller).
 
-CRITICAL: Use Google Search to find real, current information about the company.
-Do NOT make up or imagine facts. All evidence must come from verifiable sources.
+=== DATE ANCHOR ===
+Today's date is ${currentDate}. This is critical for your analysis.
+
+=== MANDATORY DATA HIERARCHY ===
+1. LIVE SEARCH DATA ONLY: You MUST use Google Search to find current prices, news, and metrics.
+2. NEVER USE TRAINING DATA for numerical values (prices, volumes, percentages, dates).
+3. If your training says a commodity price is X but Search shows a different value, you MUST use the Search result.
+4. If you cannot find current data via Search, explicitly state "Data not found via search" rather than guessing.
+
+=== EVIDENCE REQUIREMENTS ===
+Every piece of evidence MUST include:
+- A specific DATE (e.g., "As of January 20, 2026")
+- A specific NUMERICAL VALUE from that date
+- The SOURCE (website name or publication)
+
+=== YOUR MANDATE ===
+Identify valuation traps, structural risks, and peer-relative weakness.
+You are debating a Bullish Analyst. Critique the "breakout" narrative with REAL data.
 
 Focus on:
-1. Why the ${triggerType} breakthrough might be a "bull trap".
-2. Negative catalysts or risks in recent news (search for them).
-3. Why this company is weaker than its peers (${peers.join(', ')}).
-${debateContext ? '4. Address the counter-arguments raised by the Bull.' : ''}`;
+1. Why the ${triggerType} breakthrough might be a "bull trap"
+2. Negative catalysts or risks in recent news (MUST search for them)
+3. Why this company is weaker than peers (${peers.join(', ')})
+${debateContext ? '4. Address counter-arguments raised by the Bull' : ''}`;
 
+  /**
+   * GROUNDED PROMPT with VERIFICATION STEP
+   * Forces model to search and extract facts before analysis
+   */
   const prompt = `
+=== STEP 1: FACT EXTRACTION (Required) ===
+Before writing your analysis, use Google Search to find and note:
+1. Current commodity prices and any recent volatility (with exact date and source)
+2. Company-specific risks: debt levels, operational issues, management concerns
+3. Regulatory or geopolitical headwinds affecting the sector
+4. Peer comparison data: how does ${ticker} compare to ${peers.join(', ')}?
+
+=== STEP 2: ANALYSIS TASK ===
 Analyze ${companyName} (${ticker}) which just crossed its ${triggerType} at $${closePrice}.
 
 Context:
-News: ${newsContext || 'No specific news provided.'}
-Metrics: ${metricsContext || 'No specific metrics provided.'}
+News: ${newsContext || 'Search for the latest 48-hour news on ' + ticker}
+Metrics: ${metricsContext || 'Search for current debt/equity, cash burn, and valuation multiples'}
 Peers: ${peers.join(', ')}
 ${debateContext ? `
-Debate Context (Rebuttals):
+=== DEBATE REBUTTAL ===
+Address these bullish counter-arguments in your thesis:
 ${debateContext}
 
-Provide your Final Defense.` : ''}
+Provide your Final Defense with updated evidence.` : ''}
 
-Provide a structured bearish memo.
-IMPORTANT: You MUST respond with ONLY valid JSON, no other text before or after.
-Output format (JSON only):
+=== STEP 3: OUTPUT FORMAT ===
+Respond with ONLY valid JSON. No text before or after the JSON.
+
 {
   "thesis": [
-    { "point": "headline risk", "evidence": "supporting data/news from your search", "confidence": 0.0-1.0 }
+    {
+      "point": "Headline risk (one sentence)",
+      "evidence": "Specific data with exact numbers from January 2026",
+      "source": "Website or publication name where you found this",
+      "dataDate": "The date of the data point (e.g., 'January 20, 2026')",
+      "confidence": 0.0-1.0
+    }
   ],
-  "primaryRisk": "The single most dangerous risk factor"
+  "primaryRisk": "The single most dangerous risk factor based on your search findings"
 }
+
+CRITICAL REMINDERS:
+- Every thesis point MUST have a source and dataDate from your Google Search
+- Do NOT use any price data from before December 2025
+- Focus on verifiable risks, not speculation
 `;
 
   try {

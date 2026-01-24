@@ -306,6 +306,39 @@ BEGIN
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_sma_ticker ON sma(ticker);
+
+-- Table E: ma_signals (Moving Average Crossover Signals)
+-- Stores 20-day, 60-day, and 250-day MA crossover signals for each ticker per date
+CREATE TABLE IF NOT EXISTS ma_signals (
+    signal_date DATE NOT NULL,
+    ticker VARCHAR(10) NOT NULL,
+    ma_20_signal VARCHAR(20),       -- Signal: CROSS_ABOVE, CROSS_BELOW, NONE
+    ma_60_signal VARCHAR(20),
+    ma_250_signal VARCHAR(20),
+    close_price NUMERIC(12, 4),
+    sma_20 NUMERIC(12, 4),
+    sma_60 NUMERIC(12, 4),
+    sma_250 NUMERIC(12, 4),
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (signal_date, ticker),
+    FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)
+) PARTITION BY RANGE (signal_date);
+
+-- Create partitions for ma_signals table (years 2025-2030)
+DO $$
+BEGIN
+    FOR year IN 2025..2030 LOOP
+        EXECUTE format(
+            'CREATE TABLE IF NOT EXISTS ma_signals_%s PARTITION OF ma_signals FOR VALUES FROM (%L) TO (%L)',
+            year,
+            year || '-01-01',
+            (year + 1) || '-01-01'
+        );
+    END LOOP;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_ma_signals_ticker ON ma_signals(ticker);
+CREATE INDEX IF NOT EXISTS idx_ma_signals_date_desc ON ma_signals(signal_date DESC);
 `;
 
 // Get secret from Secrets Manager

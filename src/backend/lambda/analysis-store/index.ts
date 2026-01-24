@@ -2,10 +2,11 @@
  * Analysis Store Lambda
  * Stores GAN loop analysis results into DynamoDB
  *
- * Table Design:
- * - Primary Key: PK (ticker#trigger_date), SK (thought_signature)
- * - GSI1: thought_signature (for retro-exam lookups)
- * - GSI2: ticker (for listing all analyses by ticker)
+ * Table Design (Updated):
+ * - Primary Key: PK = ticker#date (e.g., "AAPL#2026-01-22"), SK = thought_signature
+ *   This allows multiple analyses per ticker/date if needed, and new reports for same ticker on different dates
+ * - GSI1: thought_signature (for retro-exam lookups) - PK: SIG#{signature}
+ * - GSI2: ticker only (for listing all analyses by ticker sorted by date) - PK: TICKER#{ticker}, SK: DATE#{date}
  *
  * Single Table Design - all data in one item for efficient retrieval
  */
@@ -64,10 +65,10 @@ interface JudgeOutput {
 }
 
 interface StoreAnalysisEvent {
-  action: 'store-analysis' | 'query-analysis' | 'query-by-signature';
+  action: 'store-analysis' | 'query-analysis' | 'query-by-signature' | 'query-by-ticker-date';
   // For store-analysis
   triggerDate?: string;
-  triggerType?: '60MA' | '250MA';
+  triggerType?: '20MA' | '60MA' | '250MA';  // Added 20MA
   closePrice?: number;
   peers?: string[];
   bullOpening?: AgentOutput;
@@ -80,6 +81,8 @@ interface StoreAnalysisEvent {
   ticker?: string;
   // For query-by-signature
   thoughtSignature?: string;
+  // For query-by-ticker-date (direct lookup)
+  date?: string;
 }
 
 interface StoreAnalysisResult {
@@ -95,7 +98,7 @@ const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
 
 // DynamoDB client
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: process.env.AWS_REGION || 'us-west-2',
   ...(process.env.DYNAMODB_ENDPOINT && {
     endpoint: process.env.DYNAMODB_ENDPOINT
   })
@@ -122,18 +125,19 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
   const thoughtSignature = judge.thoughtSignature;
 
   // Single table design - store everything in one item
+  // PK format: ticker#date (allows new reports for same ticker on different dates)
   const item = {
-    // Primary Key
-    PK: `TICKER#${ticker}`,
-    SK: `DATE#${triggerDate}#${thoughtSignature}`,
+    // Primary Key: Combined ticker and date for uniqueness
+    PK: `${ticker}#${triggerDate}`,
+    SK: thoughtSignature,
 
     // GSI1: For lookup by thought_signature (retro-exam)
     GSI1PK: `SIG#${thoughtSignature}`,
-    GSI1SK: `TICKER#${ticker}`,
+    GSI1SK: `${ticker}#${triggerDate}`,
 
     // GSI2: For listing by ticker with date sorting
     GSI2PK: `TICKER#${ticker}`,
-    GSI2SK: `DATE#${triggerDate}`,
+    GSI2SK: triggerDate,
 
     // Entity type for filtering
     entityType: 'ANALYSIS_REPORT',
@@ -260,6 +264,32 @@ async function queryBySignature(thoughtSignature: string): Promise<StoreAnalysis
   };
 }
 
+// Query analysis by ticker and date (direct primary key lookup)
+async function queryByTickerDate(ticker: string, date: string): Promise<StoreAnalysisResult> {
+  const result = await docClient.send(new QueryCommand({
+    TableName: TABLE_NAME,
+    KeyConditionExpression: 'PK = :pk',
+    ExpressionAttributeValues: {
+      ':pk': `${ticker}#${date}`
+    }
+  }));
+
+  if (!result.Items || result.Items.length === 0) {
+    return {
+      success: false,
+      action: 'query-by-ticker-date',
+      message: `No analysis found for ${ticker} on ${date}`
+    };
+  }
+
+  return {
+    success: true,
+    action: 'query-by-ticker-date',
+    message: `Found ${result.Items.length} analysis(es) for ${ticker} on ${date}`,
+    data: result.Items
+  };
+}
+
 // Lambda handler
 type Handler<TEvent = any, TResult = any> = (event: TEvent, context: any) => Promise<TResult>;
 
@@ -283,11 +313,17 @@ export const handler: Handler<StoreAnalysisEvent, StoreAnalysisResult> = async (
         }
         return await queryBySignature(event.thoughtSignature);
 
+      case 'query-by-ticker-date':
+        if (!event.ticker || !event.date) {
+          throw new Error('ticker and date are required for query-by-ticker-date');
+        }
+        return await queryByTickerDate(event.ticker, event.date);
+
       default:
         return {
           success: false,
           action: event.action || 'unknown',
-          message: `Unknown action: ${event.action}. Valid actions: store-analysis, query-analysis, query-by-signature`
+          message: `Unknown action: ${event.action}. Valid actions: store-analysis, query-analysis, query-by-signature, query-by-ticker-date`
         };
     }
   } catch (error) {
