@@ -1,15 +1,15 @@
 /**
  * Signal Generator Lambda
  * Runs daily at 4:30 PM ET (after market close) to:
- * 1. Fetch Russell 1000 tickers from Aurora
- * 2. Detect MA crossover signals (20, 60, 250-day)
- * 3. Store signals in Aurora ma_signals table
+ * 1. Fetch Russell 1000 tickers from Aurora where price increased (c > prev_c)
+ * 2. Detect MA crossover signals (20, 60, 250-day) for filtered tickers
+ * 3. Store ONLY valid signals (CROSS_ABOVE/CROSS_BELOW) in ma_signals table
  * 4. Return list of tickers with active signals for GAN analysis
  *
  * Signal Detection Logic:
  * - CROSS_ABOVE: Yesterday price < MA, Today price >= MA
  * - CROSS_BELOW: Yesterday price >= MA, Today price < MA
- * - NONE: No crossover
+ * - Only tickers with price increase AND valid crossover signals are stored
  */
 
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
@@ -22,25 +22,16 @@ interface MASignal {
   ticker: string;
   signalDate: string;
   closePrice: number;
+  prevClosePrice: number;
+  priceChangePercent: number;
   sma20: number | null;
   sma60: number | null;
   sma250: number | null;
   ma20Signal: SignalType;
   ma60Signal: SignalType;
   ma250Signal: SignalType;
-}
-
-interface TickerData {
-  ticker: string;
-  tradeDate: string;
-  closePrice: number;
-  prevClosePrice: number | null;
-  sma20: number | null;
-  sma60: number | null;
-  sma250: number | null;
-  prevSma20: number | null;
-  prevSma60: number | null;
-  prevSma250: number | null;
+  generatedAt: string;
+  reportedAt: string | null;
 }
 
 interface SignalGeneratorEvent {
@@ -68,18 +59,25 @@ interface SignalGeneratorResult {
 
 // Migration SQL for ma_signals table
 const MIGRATION_SQL = `
+-- Drop and recreate ma_signals table with new schema
+DROP TABLE IF EXISTS ma_signals CASCADE;
+
 -- Table: ma_signals (Moving Average Crossover Signals)
+-- Only stores valid signals (CROSS_ABOVE/CROSS_BELOW) for tickers with price increase
 CREATE TABLE IF NOT EXISTS ma_signals (
     signal_date DATE NOT NULL,
     ticker VARCHAR(10) NOT NULL,
+    close_price NUMERIC(12, 4) NOT NULL,
+    prev_close_price NUMERIC(12, 4) NOT NULL,
+    price_change_pct NUMERIC(8, 4) NOT NULL,
     ma_20_signal VARCHAR(20),
     ma_60_signal VARCHAR(20),
     ma_250_signal VARCHAR(20),
-    close_price NUMERIC(12, 4),
     sma_20 NUMERIC(12, 4),
     sma_60 NUMERIC(12, 4),
     sma_250 NUMERIC(12, 4),
-    created_at TIMESTAMP DEFAULT NOW(),
+    generated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    reported_at TIMESTAMP,
     PRIMARY KEY (signal_date, ticker),
     FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)
 ) PARTITION BY RANGE (signal_date);
@@ -97,9 +95,10 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create indexes
+-- Create indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_ma_signals_ticker ON ma_signals(ticker);
 CREATE INDEX IF NOT EXISTS idx_ma_signals_date_desc ON ma_signals(signal_date DESC);
+CREATE INDEX IF NOT EXISTS idx_ma_signals_unreported ON ma_signals(signal_date) WHERE reported_at IS NULL;
 `;
 
 // Get secret from Secrets Manager
@@ -140,30 +139,6 @@ function getCurrentTradingDay(): string {
   return now.toLocaleDateString('en-CA', etOptions); // YYYY-MM-DD format
 }
 
-// Determine signal type by comparing today vs yesterday
-function detectSignal(
-  todayPrice: number,
-  todayMA: number | null,
-  yesterdayPrice: number | null,
-  yesterdayMA: number | null
-): SignalType {
-  // Cannot detect signal if missing data
-  if (todayMA === null || yesterdayPrice === null || yesterdayMA === null) {
-    return 'NONE';
-  }
-
-  const todayAboveMA = todayPrice >= todayMA;
-  const yesterdayAboveMA = yesterdayPrice >= yesterdayMA;
-
-  if (!yesterdayAboveMA && todayAboveMA) {
-    return 'CROSS_ABOVE';
-  } else if (yesterdayAboveMA && !todayAboveMA) {
-    return 'CROSS_BELOW';
-  }
-
-  return 'NONE';
-}
-
 // Run migrations
 async function runMigrations(pool: Pool): Promise<void> {
   console.log('[SignalGenerator] Running migrations...');
@@ -176,61 +151,72 @@ async function runMigrations(pool: Pool): Promise<void> {
   }
 }
 
-// Generate signals for all Russell 1000 tickers
+// Generate signals for Russell 1000 tickers with price increase and MA crossovers
 async function generateSignals(pool: Pool, tradeDate: string): Promise<SignalGeneratorResult> {
   console.log(`[SignalGenerator] Generating signals for ${tradeDate}...`);
 
   const client = await pool.connect();
 
   try {
-    // Query to get today's and yesterday's price + SMA data for all Russell 1000 tickers
-    // Uses a CTE to get the two most recent trading days for each ticker
+    // Query uses prev_c from price_history (previous day's close) and today's SMA
+    // Crossover: prev_c vs today's SMA, c vs today's SMA
     const query = `
-      WITH recent_data AS (
+      WITH ticker_data AS (
         SELECT
           r.ticker,
           ph.trade_date,
-          ph.c as close_price,
+          ph.c AS close_price,
+          ph.prev_c AS prev_close_price,
           s.sma_20,
           s.sma_60,
-          s.sma_250,
-          ROW_NUMBER() OVER (PARTITION BY r.ticker ORDER BY ph.trade_date DESC) as rn
+          s.sma_250
         FROM russell_1000 r
         INNER JOIN price_history ph ON r.ticker = ph.ticker
         LEFT JOIN sma s ON r.ticker = s.ticker AND ph.trade_date = s.trade_date
-        WHERE ph.trade_date <= $1
+        WHERE ph.trade_date = $1
+          AND ph.c > ph.prev_c  -- Only tickers with price increase
       ),
-      today_data AS (
-        SELECT * FROM recent_data WHERE rn = 1
-      ),
-      yesterday_data AS (
-        SELECT * FROM recent_data WHERE rn = 2
+      signals AS (
+        SELECT
+          ticker,
+          trade_date::text,
+          close_price::float,
+          prev_close_price::float,
+          sma_20::float,
+          sma_60::float,
+          sma_250::float,
+          CASE
+            WHEN prev_close_price < sma_20 AND close_price >= sma_20 THEN 'CROSS_ABOVE'
+            WHEN prev_close_price >= sma_20 AND close_price < sma_20 THEN 'CROSS_BELOW'
+            ELSE 'NONE'
+          END AS ma_20_signal,
+          CASE
+            WHEN prev_close_price < sma_60 AND close_price >= sma_60 THEN 'CROSS_ABOVE'
+            WHEN prev_close_price >= sma_60 AND close_price < sma_60 THEN 'CROSS_BELOW'
+            ELSE 'NONE'
+          END AS ma_60_signal,
+          CASE
+            WHEN prev_close_price < sma_250 AND close_price >= sma_250 THEN 'CROSS_ABOVE'
+            WHEN prev_close_price >= sma_250 AND close_price < sma_250 THEN 'CROSS_BELOW'
+            ELSE 'NONE'
+          END AS ma_250_signal
+        FROM ticker_data
       )
-      SELECT
-        t.ticker,
-        t.trade_date::text as trade_date,
-        t.close_price::float,
-        y.close_price::float as prev_close_price,
-        t.sma_20::float,
-        t.sma_60::float,
-        t.sma_250::float,
-        y.sma_20::float as prev_sma_20,
-        y.sma_60::float as prev_sma_60,
-        y.sma_250::float as prev_sma_250
-      FROM today_data t
-      LEFT JOIN yesterday_data y ON t.ticker = y.ticker
-      WHERE t.trade_date = $1
-      ORDER BY t.ticker
+      SELECT * FROM signals
+      WHERE ma_20_signal != 'NONE'
+         OR ma_60_signal != 'NONE'
+         OR ma_250_signal != 'NONE'
+      ORDER BY ticker
     `;
 
     const result = await client.query(query, [tradeDate]);
-    console.log(`[SignalGenerator] Found ${result.rows.length} tickers with data for ${tradeDate}`);
+    console.log(`[SignalGenerator] Found ${result.rows.length} tickers with valid crossover signals for ${tradeDate}`);
 
     if (result.rows.length === 0) {
       return {
         success: true,
         action: 'generate-signals',
-        message: `No price data found for ${tradeDate}. Make sure price_history and sma tables are populated.`,
+        message: `No crossover signals found for ${tradeDate}. Make sure price_history and sma tables are populated.`,
         stats: {
           tickersProcessed: 0,
           signalsGenerated: 0,
@@ -240,104 +226,88 @@ async function generateSignals(pool: Pool, tradeDate: string): Promise<SignalGen
       };
     }
 
-    // Process each ticker and detect signals
+    // Process each signal and insert into database
     const signals: MASignal[] = [];
     let activeSignals = { ma20: 0, ma60: 0, ma250: 0 };
+    const generatedAt = new Date().toISOString();
 
     await client.query('BEGIN');
 
     for (const row of result.rows) {
-      const tickerData: TickerData = {
-        ticker: row.ticker,
-        tradeDate: row.trade_date,
-        closePrice: row.close_price,
-        prevClosePrice: row.prev_close_price,
-        sma20: row.sma_20,
-        sma60: row.sma_60,
-        sma250: row.sma_250,
-        prevSma20: row.prev_sma_20,
-        prevSma60: row.prev_sma_60,
-        prevSma250: row.prev_sma_250,
-      };
-
-      // Detect signals for each MA
-      const ma20Signal = detectSignal(
-        tickerData.closePrice,
-        tickerData.sma20,
-        tickerData.prevClosePrice,
-        tickerData.prevSma20
-      );
-      const ma60Signal = detectSignal(
-        tickerData.closePrice,
-        tickerData.sma60,
-        tickerData.prevClosePrice,
-        tickerData.prevSma60
-      );
-      const ma250Signal = detectSignal(
-        tickerData.closePrice,
-        tickerData.sma250,
-        tickerData.prevClosePrice,
-        tickerData.prevSma250
-      );
+      const ma20Signal = row.ma_20_signal as SignalType;
+      const ma60Signal = row.ma_60_signal as SignalType;
+      const ma250Signal = row.ma_250_signal as SignalType;
 
       // Count active signals
       if (ma20Signal !== 'NONE') activeSignals.ma20++;
       if (ma60Signal !== 'NONE') activeSignals.ma60++;
       if (ma250Signal !== 'NONE') activeSignals.ma250++;
 
+      // Calculate price change percentage
+      const priceChangePercent = ((row.close_price - row.prev_close_price) / row.prev_close_price) * 100;
+
       const signal: MASignal = {
-        ticker: tickerData.ticker,
+        ticker: row.ticker,
         signalDate: tradeDate,
-        closePrice: tickerData.closePrice,
-        sma20: tickerData.sma20,
-        sma60: tickerData.sma60,
-        sma250: tickerData.sma250,
+        closePrice: row.close_price,
+        prevClosePrice: row.prev_close_price,
+        priceChangePercent,
+        sma20: row.sma_20,
+        sma60: row.sma_60,
+        sma250: row.sma_250,
         ma20Signal,
         ma60Signal,
         ma250Signal,
+        generatedAt,
+        reportedAt: null,
       };
 
-      // Insert/update signal in database
+      // Insert valid signal into database
       await client.query(`
-        INSERT INTO ma_signals (signal_date, ticker, ma_20_signal, ma_60_signal, ma_250_signal,
-                                close_price, sma_20, sma_60, sma_250)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO ma_signals (
+          signal_date, ticker, close_price, prev_close_price, price_change_pct,
+          ma_20_signal, ma_60_signal, ma_250_signal,
+          sma_20, sma_60, sma_250, generated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         ON CONFLICT (signal_date, ticker) DO UPDATE SET
+          close_price = EXCLUDED.close_price,
+          prev_close_price = EXCLUDED.prev_close_price,
+          price_change_pct = EXCLUDED.price_change_pct,
           ma_20_signal = EXCLUDED.ma_20_signal,
           ma_60_signal = EXCLUDED.ma_60_signal,
           ma_250_signal = EXCLUDED.ma_250_signal,
-          close_price = EXCLUDED.close_price,
           sma_20 = EXCLUDED.sma_20,
           sma_60 = EXCLUDED.sma_60,
           sma_250 = EXCLUDED.sma_250,
-          created_at = NOW()
+          generated_at = EXCLUDED.generated_at
       `, [
         tradeDate,
-        tickerData.ticker,
+        row.ticker,
+        row.close_price,
+        row.prev_close_price,
+        priceChangePercent,
         ma20Signal,
         ma60Signal,
         ma250Signal,
-        tickerData.closePrice,
-        tickerData.sma20,
-        tickerData.sma60,
-        tickerData.sma250,
+        row.sma_20,
+        row.sma_60,
+        row.sma_250,
+        generatedAt,
       ]);
 
-      // Only include in output if there's an active signal
-      if (ma20Signal !== 'NONE' || ma60Signal !== 'NONE' || ma250Signal !== 'NONE') {
-        signals.push(signal);
-      }
+      signals.push(signal);
     }
 
     await client.query('COMMIT');
 
-    console.log(`[SignalGenerator] Generated signals: ${result.rows.length} total, ${signals.length} active`);
-    console.log(`[SignalGenerator] Active signals by MA: 20-day=${activeSignals.ma20}, 60-day=${activeSignals.ma60}, 250-day=${activeSignals.ma250}`);
+    console.log(`[SignalGenerator] Stored ${signals.length} valid crossover signals`);
+    console.log(`[SignalGenerator] Signals by MA: 20-day=${activeSignals.ma20}, 60-day=${activeSignals.ma60}, 250-day=${activeSignals.ma250}`);
 
     return {
       success: true,
       action: 'generate-signals',
-      message: `Generated signals for ${result.rows.length} tickers on ${tradeDate}`,
+      message: `Generated ${signals.length} crossover signals for ${tradeDate}`,
       stats: {
         tickersProcessed: result.rows.length,
         signalsGenerated: signals.length,
@@ -363,13 +333,17 @@ async function querySignals(pool: Pool, signalDate: string, ticker?: string): Pr
       SELECT
         signal_date::text,
         ticker,
+        close_price::float,
+        prev_close_price::float,
+        price_change_pct::float,
         ma_20_signal,
         ma_60_signal,
         ma_250_signal,
-        close_price::float,
         sma_20::float,
         sma_60::float,
-        sma_250::float
+        sma_250::float,
+        generated_at::text,
+        reported_at::text
       FROM ma_signals
       WHERE signal_date = $1
     `;
@@ -380,9 +354,7 @@ async function querySignals(pool: Pool, signalDate: string, ticker?: string): Pr
       params.push(ticker);
     }
 
-    // Only return active signals (non-NONE)
-    query += ` AND (ma_20_signal != 'NONE' OR ma_60_signal != 'NONE' OR ma_250_signal != 'NONE')`;
-    query += ` ORDER BY ticker`;
+    query += ` ORDER BY price_change_pct DESC`;
 
     const result = await client.query(query, params.filter(p => p !== undefined));
 
@@ -390,18 +362,22 @@ async function querySignals(pool: Pool, signalDate: string, ticker?: string): Pr
       ticker: row.ticker,
       signalDate: row.signal_date,
       closePrice: row.close_price,
+      prevClosePrice: row.prev_close_price,
+      priceChangePercent: row.price_change_pct,
       sma20: row.sma_20,
       sma60: row.sma_60,
       sma250: row.sma_250,
       ma20Signal: row.ma_20_signal as SignalType,
       ma60Signal: row.ma_60_signal as SignalType,
       ma250Signal: row.ma_250_signal as SignalType,
+      generatedAt: row.generated_at,
+      reportedAt: row.reported_at,
     }));
 
     return {
       success: true,
       action: 'query-signals',
-      message: `Found ${signals.length} active signals for ${signalDate}${ticker ? ` (${ticker})` : ''}`,
+      message: `Found ${signals.length} signals for ${signalDate}${ticker ? ` (${ticker})` : ''}`,
       signals,
     };
 
