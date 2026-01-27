@@ -164,6 +164,13 @@ CREATE TABLE IF NOT EXISTS russell_1000 (
     name TEXT NOT NULL
 );
 
+-- Table C2: nasdaq_100 (Nasdaq 100 Index Constituents)
+CREATE TABLE IF NOT EXISTS nasdaq_100 (
+    ticker VARCHAR(10) PRIMARY KEY,
+    name TEXT NOT NULL,
+    weight NUMERIC(8, 4)  -- Index weight percentage (e.g., 13.60 for 13.60%)
+);
+
 -- Table D: sma (Simple Moving Averages)
 -- Stores 20-day, 60-day, and 250-day SMA values for each ticker per date
 CREATE TABLE IF NOT EXISTS sma (
@@ -191,6 +198,39 @@ BEGIN
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_sma_ticker ON sma(ticker);
+
+-- Table E: ma_signals (Moving Average Crossover Signals)
+-- Stores 20-day, 60-day, and 250-day MA crossover signals for each ticker per date
+CREATE TABLE IF NOT EXISTS ma_signals (
+    signal_date DATE NOT NULL,
+    ticker VARCHAR(10) NOT NULL,
+    ma_20_signal VARCHAR(20),       -- Signal: CROSS_ABOVE, CROSS_BELOW, NONE
+    ma_60_signal VARCHAR(20),
+    ma_250_signal VARCHAR(20),
+    close_price NUMERIC(12, 4),
+    sma_20 NUMERIC(12, 4),
+    sma_60 NUMERIC(12, 4),
+    sma_250 NUMERIC(12, 4),
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (signal_date, ticker),
+    FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)
+) PARTITION BY RANGE (signal_date);
+
+-- Create partitions for ma_signals table (years 2025-2030)
+DO $$
+BEGIN
+    FOR year IN 2025..2030 LOOP
+        EXECUTE format(
+            'CREATE TABLE IF NOT EXISTS ma_signals_%s PARTITION OF ma_signals FOR VALUES FROM (%L) TO (%L)',
+            year,
+            year || '-01-01',
+            (year + 1) || '-01-01'
+        );
+    END LOOP;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_ma_signals_ticker ON ma_signals(ticker);
+CREATE INDEX IF NOT EXISTS idx_ma_signals_date_desc ON ma_signals(signal_date DESC);
 `;
 // Get secret from Secrets Manager
 async function getSecret(secretName) {
@@ -485,13 +525,67 @@ const handler = async (event) => {
                 client.release();
             }
             // Verify
-            const [{ count }] = await pool.query('SELECT COUNT(*) as count FROM russell_1000').then(r => r.rows);
+            const [{ count: russellCount }] = await pool.query('SELECT COUNT(*) as count FROM russell_1000').then(r => r.rows);
+            console.log(`[DataLoader] Russell 1000 table now has ${russellCount} tickers`);
             return {
                 success: true,
                 action,
                 message: `Successfully loaded ${inserted} Russell 1000 tickers`,
                 stats: {
                     tickersProcessed: russellData.length,
+                    metadataInserted: inserted,
+                },
+            };
+        }
+        if (action === 'load-nasdaq-100') {
+            const nasdaqData = event.nasdaqData;
+            if (!nasdaqData || nasdaqData.length === 0) {
+                return {
+                    success: false,
+                    action,
+                    message: 'nasdaqData is required for load-nasdaq-100 action',
+                };
+            }
+            console.log(`[DataLoader] Loading ${nasdaqData.length} Nasdaq 100 tickers...`);
+            // Ensure nasdaq_100 table exists
+            await pool.query(`
+        CREATE TABLE IF NOT EXISTS nasdaq_100 (
+          ticker VARCHAR(10) PRIMARY KEY,
+          name TEXT NOT NULL,
+          weight NUMERIC(8, 4)
+        )
+      `);
+            // Clear existing data and insert new
+            const client = await pool.connect();
+            let inserted = 0;
+            try {
+                await client.query('BEGIN');
+                // Truncate existing data
+                await client.query('TRUNCATE TABLE nasdaq_100');
+                // Insert all records
+                for (const record of nasdaqData) {
+                    await client.query('INSERT INTO nasdaq_100 (ticker, name, weight) VALUES ($1, $2, $3)', [record.ticker, record.name, record.weight]);
+                    inserted++;
+                }
+                await client.query('COMMIT');
+                console.log(`[DataLoader] Successfully loaded ${inserted} Nasdaq 100 tickers`);
+            }
+            catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            }
+            finally {
+                client.release();
+            }
+            // Verify
+            const [{ count: nasdaqCount }] = await pool.query('SELECT COUNT(*) as count FROM nasdaq_100').then(r => r.rows);
+            console.log(`[DataLoader] Nasdaq 100 table now has ${nasdaqCount} tickers`);
+            return {
+                success: true,
+                action,
+                message: `Successfully loaded ${inserted} Nasdaq 100 tickers`,
+                stats: {
+                    tickersProcessed: nasdaqData.length,
                     metadataInserted: inserted,
                 },
             };

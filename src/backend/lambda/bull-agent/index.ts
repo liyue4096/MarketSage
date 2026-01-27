@@ -1,12 +1,13 @@
 // import { Handler } from 'aws-lambda'; // Unavailable in test env
-import { GeminiClient } from '../../lambda-layers/shared/nodejs/services/gemini-client';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { GeminiClient } = require('/opt/nodejs/services/gemini-client');
 
 type Handler<TEvent = any, TResult = any> = (event: TEvent, context: any) => Promise<TResult>;
 
 interface AgentInput {
   ticker: string;
   companyName: string;
-  triggerType: '60MA' | '250MA';
+  triggerType: '20MA' | '60MA' | '250MA';
   closePrice: number;
   peers: string[];
   newsContext?: string;

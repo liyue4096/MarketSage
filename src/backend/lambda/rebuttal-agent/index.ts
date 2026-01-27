@@ -1,5 +1,6 @@
 // import { Handler } from 'aws-lambda';
-import { GeminiClient } from '../../lambda-layers/shared/nodejs/services/gemini-client';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { GeminiClient } = require('/opt/nodejs/services/gemini-client');
 
 type Handler<TEvent = any, TResult = any> = (event: TEvent, context: any) => Promise<TResult>;
 

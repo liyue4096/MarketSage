@@ -1,5 +1,6 @@
 // import { Handler } from 'aws-lambda';
-import { GeminiClient } from '../../lambda-layers/shared/nodejs/services/gemini-client';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { GeminiClient } = require('/opt/nodejs/services/gemini-client');
 
 type Handler<TEvent = any, TResult = any> = (event: TEvent, context: any) => Promise<TResult>;
 
@@ -62,10 +63,21 @@ Today's date is ${currentDate}. Use this to evaluate the recency of evidence pre
 - "Neutral": Neither side had sufficiently strong current evidence, or evidence is mixed
 - "Short": Bear convincingly won with verified risk factors
 
-=== CONFIDENCE SCORING ===
-- 8-10: Multiple thesis points with recent, sourced evidence from both sides
-- 5-7: Good evidence but some gaps or outdated data
-- 1-4: Poor evidence quality, mostly speculation or stale data`;
+=== CONFIDENCE SCORING (BE STRICT) ===
+- 9-10: EXCEPTIONAL - Every thesis point has a dated source from January 2026, numbers are precise and verifiable
+- 7-8: STRONG - Most points have recent sources, minor gaps acceptable, no stale data
+- 5-6: MODERATE - Good arguments but some points lack sources OR use data older than 2 weeks
+- 3-4: WEAK - Multiple unsourced claims, or significant reliance on outdated data (pre-December 2025)
+- 1-2: POOR - Mostly speculation, no credible sources, or fundamentally flawed analysis
+
+=== AUTOMATIC PENALTIES (subtract from base score) ===
+- Any thesis point without a specific source: -1 per occurrence
+- Data older than 30 days without acknowledgment: -2
+- Contradictory claims between thesis points: -1
+- Generic/vague evidence ("analysts say", "market expects"): -0.5 per occurrence
+
+=== IMPORTANT ===
+Default to 6 (MODERATE) and adjust up/down based on evidence quality. Do NOT default to high scores.`;
 
   const prompt = `
 === DEBATE RECORD FOR ${ticker} ===

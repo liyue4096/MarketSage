@@ -42,10 +42,11 @@ interface AllTickersSnapshotResponse {
 }
 
 interface DataLoaderEvent {
-  action: 'migrate' | 'load-snapshot' | 'full' | 'query' | 'query-sma' | 'load-russell-1000' | 'load-agg' | 'load-russell-agg' | 'load-sma' | 'load-russell-sma';
+  action: 'migrate' | 'load-snapshot' | 'full' | 'query' | 'query-sma' | 'load-russell-1000' | 'load-nasdaq-100' | 'load-agg' | 'load-russell-agg' | 'load-sma' | 'load-russell-sma';
   tradeDate?: string; // YYYY-MM-DD format, defaults to previous trading day
   tickers?: string[]; // For query action or load-agg action
   russellData?: Array<{ ticker: string; name: string }>; // For load-russell-1000 action
+  nasdaqData?: Array<{ ticker: string; name: string; weight: number }>; // For load-nasdaq-100 action
   fromDate?: string; // For load-agg action, YYYY-MM-DD format
   toDate?: string; // For load-agg action, YYYY-MM-DD format
   batchStart?: number; // For load-russell-agg, starting index (0-based)
@@ -277,6 +278,13 @@ CREATE INDEX IF NOT EXISTS idx_price_history_ticker ON price_history(ticker);
 CREATE TABLE IF NOT EXISTS russell_1000 (
     ticker VARCHAR(10) PRIMARY KEY,
     name TEXT NOT NULL
+);
+
+-- Table C2: nasdaq_100 (Nasdaq 100 Index Constituents)
+CREATE TABLE IF NOT EXISTS nasdaq_100 (
+    ticker VARCHAR(10) PRIMARY KEY,
+    name TEXT NOT NULL,
+    weight NUMERIC(8, 4)  -- Index weight percentage (e.g., 13.60 for 13.60%)
 );
 
 -- Table D: sma (Simple Moving Averages)
@@ -721,9 +729,11 @@ export const handler: Handler<DataLoaderEvent, DataLoaderResult> = async (event)
       }
 
       // Verify
-      const [{ count }] = await pool.query<{ count: string }>(
+      const [{ count: russellCount }] = await pool.query<{ count: string }>(
         'SELECT COUNT(*) as count FROM russell_1000'
       ).then(r => r.rows);
+
+      console.log(`[DataLoader] Russell 1000 table now has ${russellCount} tickers`);
 
       return {
         success: true,
@@ -731,6 +741,75 @@ export const handler: Handler<DataLoaderEvent, DataLoaderResult> = async (event)
         message: `Successfully loaded ${inserted} Russell 1000 tickers`,
         stats: {
           tickersProcessed: russellData.length,
+          metadataInserted: inserted,
+        },
+      };
+    }
+
+    if (action === 'load-nasdaq-100') {
+      const nasdaqData = event.nasdaqData;
+
+      if (!nasdaqData || nasdaqData.length === 0) {
+        return {
+          success: false,
+          action,
+          message: 'nasdaqData is required for load-nasdaq-100 action',
+        };
+      }
+
+      console.log(`[DataLoader] Loading ${nasdaqData.length} Nasdaq 100 tickers...`);
+
+      // Ensure nasdaq_100 table exists
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS nasdaq_100 (
+          ticker VARCHAR(10) PRIMARY KEY,
+          name TEXT NOT NULL,
+          weight NUMERIC(8, 4)
+        )
+      `);
+
+      // Clear existing data and insert new
+      const client = await pool.connect();
+      let inserted = 0;
+
+      try {
+        await client.query('BEGIN');
+
+        // Truncate existing data
+        await client.query('TRUNCATE TABLE nasdaq_100');
+
+        // Insert all records
+        for (const record of nasdaqData) {
+          await client.query(
+            'INSERT INTO nasdaq_100 (ticker, name, weight) VALUES ($1, $2, $3)',
+            [record.ticker, record.name, record.weight]
+          );
+          inserted++;
+        }
+
+        await client.query('COMMIT');
+        console.log(`[DataLoader] Successfully loaded ${inserted} Nasdaq 100 tickers`);
+
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+
+      // Verify
+      const [{ count: nasdaqCount }] = await pool.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM nasdaq_100'
+      ).then(r => r.rows);
+
+      console.log(`[DataLoader] Nasdaq 100 table now has ${nasdaqCount} tickers`);
+
+      return {
+        success: true,
+        action,
+        message: `Successfully loaded ${inserted} Nasdaq 100 tickers`,
+        stats: {
+          tickersProcessed: nasdaqData.length,
           metadataInserted: inserted,
         },
       };

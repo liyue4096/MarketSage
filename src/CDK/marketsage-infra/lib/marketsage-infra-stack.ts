@@ -324,6 +324,24 @@ export class MarketsageInfraStack extends cdk.Stack {
       layers: [lambdaLayer],
     });
 
+    // Report Selector Lambda - Selects tickers for daily reports with quota management
+    const reportSelectorLambda = new lambda.Function(this, 'ReportSelectorLambda', {
+      functionName: 'marketsage-report-selector',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/report-selector')),
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [lambdaSecurityGroup],
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 512,
+      environment: {
+        ...commonEnv,
+        ANALYSIS_TABLE_NAME: analysisTable.tableName,
+      },
+      layers: [lambdaLayer],
+    });
+
     // Analysis Store Lambda - Stores GAN analysis results to DynamoDB
     const analysisStoreLambda = new lambda.Function(this, 'AnalysisStoreLambda', {
       functionName: 'marketsage-analysis-store',
@@ -342,6 +360,9 @@ export class MarketsageInfraStack extends cdk.Stack {
     // Grant DynamoDB access to analysis store Lambda
     analysisTable.grantReadWriteData(analysisStoreLambda);
 
+    // Grant DynamoDB read access to report selector Lambda
+    analysisTable.grantReadData(reportSelectorLambda);
+
     // Grant Lambda functions access to secrets and database
     const allLambdas = [
       technicalScannerLambda,
@@ -354,6 +375,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       apiHandlerLambda,
       dataLoaderLambda,
       signalGeneratorLambda,
+      reportSelectorLambda,
     ];
 
     allLambdas.forEach((fn) => {
@@ -379,6 +401,9 @@ export class MarketsageInfraStack extends cdk.Stack {
       }));
     });
 
+    // Grant technical-scanner permission to invoke report-selector
+    reportSelectorLambda.grantInvoke(technicalScannerLambda);
+
     // ========================================
     // Step Functions - Adversarial Analysis Workflow
     // ========================================
@@ -386,57 +411,101 @@ export class MarketsageInfraStack extends cdk.Stack {
     // Step 1: Technical Scanner
     const scanTask = new tasks.LambdaInvoke(this, 'ScanForBreakthroughs', {
       lambdaFunction: technicalScannerLambda,
-      outputPath: '$.Payload',
+      payloadResponseOnly: true,  // Extracts just the Lambda response payload
       retryOnServiceExceptions: true,
     });
 
-    // Step 2: Parallel Bull and Bear thesis generation
+    // Step 2: Sequential Bull and Bear thesis generation
     const bullTask = new tasks.LambdaInvoke(this, 'GenerateBullThesis', {
       lambdaFunction: bullAgentLambda,
-      outputPath: '$.Payload',
+      payloadResponseOnly: true,  // Extracts just the Lambda response payload
       resultPath: '$.bullThesis',
+      retryOnServiceExceptions: true,
     });
 
     const bearTask = new tasks.LambdaInvoke(this, 'GenerateBearThesis', {
       lambdaFunction: bearAgentLambda,
-      outputPath: '$.Payload',
+      payloadResponseOnly: true,  // Extracts just the Lambda response payload
       resultPath: '$.bearThesis',
+      retryOnServiceExceptions: true,
     });
 
-    const parallelThesis = new stepfunctions.Parallel(this, 'ParallelThesisGeneration', {
-      resultPath: '$.theses',
+    // SEQUENTIAL EXECUTION: Run bull then bear (not parallel) for reliability
+    // Step 2a: Combine bull and bear results into theses array for rebuttal agent
+    const combineTheses = new stepfunctions.Pass(this, 'CombineTheses', {
+      parameters: {
+        'ticker.$': '$.bullThesis.ticker',
+        'companyName.$': '$.companyName',
+        'triggerType.$': '$.triggerType',
+        'closePrice.$': '$.closePrice',
+        'peers.$': '$.peers',
+        'theses.$': 'States.Array($.bullThesis, $.bearThesis)',
+      },
+      resultPath: '$.combinedInput',
     });
-    parallelThesis.branch(bullTask);
-    parallelThesis.branch(bearTask);
 
-    // Step 3: Rebuttal round
+    // Step 3: Rebuttal round - uses combined theses
     const rebuttalTask = new tasks.LambdaInvoke(this, 'GenerateRebuttals', {
       lambdaFunction: rebuttalAgentLambda,
-      outputPath: '$.Payload',
+      payload: stepfunctions.TaskInput.fromObject({
+        'ticker.$': '$.combinedInput.ticker',
+        'theses.$': '$.combinedInput.theses',
+      }),
+      payloadResponseOnly: true,
       resultPath: '$.rebuttals',
+      retryOnServiceExceptions: true,
     });
 
-    // Step 4: Judge synthesis
+    // Step 4: Judge synthesis - receives all data
     const judgeTask = new tasks.LambdaInvoke(this, 'SynthesizeVerdict', {
       lambdaFunction: judgeAgentLambda,
-      outputPath: '$.Payload',
+      payload: stepfunctions.TaskInput.fromObject({
+        'ticker.$': '$.combinedInput.ticker',
+        'theses.$': '$.combinedInput.theses',
+        'rebuttals.$': '$.rebuttals',
+      }),
+      payloadResponseOnly: true,
       resultPath: '$.verdict',
+      retryOnServiceExceptions: true,
     });
 
     // Step 5: Store analysis to DynamoDB
     const storeAnalysisTask = new tasks.LambdaInvoke(this, 'StoreAnalysis', {
       lambdaFunction: analysisStoreLambda,
-      outputPath: '$.Payload',
+      payload: stepfunctions.TaskInput.fromObject({
+        'action': 'store-analysis',
+        'triggerDate.$': '$.scanDate',
+        'triggerType.$': '$.triggerType',
+        'closePrice.$': '$.closePrice',
+        'peers.$': '$.peers',
+        'bullOpening.$': '$.bullThesis',
+        'bearOpening.$': '$.bearThesis',
+        'rebuttals.$': '$.rebuttals',
+        'judge.$': '$.verdict',
+      }),
+      payloadResponseOnly: true,
+      retryOnServiceExceptions: true,
     });
 
-    // Map state to process each triggered stock
+    // Map state to process each triggered stock - SEQUENTIAL, one at a time
     const processStockMap = new stepfunctions.Map(this, 'ProcessEachStock', {
-      maxConcurrency: 5,
+      maxConcurrency: 1,  // Process one stock at a time to avoid Gemini rate limits
       itemsPath: '$.triggeredStocks',
       resultPath: '$.processedReports',
+      parameters: {
+        'ticker.$': '$$.Map.Item.Value.ticker',
+        'companyName.$': '$$.Map.Item.Value.companyName',
+        'triggerType.$': '$$.Map.Item.Value.triggerType',
+        'closePrice.$': '$$.Map.Item.Value.closePrice',
+        'peers.$': '$$.Map.Item.Value.peers',
+        'scanDate.$': '$.scanDate',
+      },
     });
 
-    const stockProcessingChain = parallelThesis
+    // Sequential chain: bull → bear → combine → rebuttal → judge → store
+    const stockProcessingChain = bullTask
+      .next(bearTask)
+      .next(combineTheses)
       .next(rebuttalTask)
       .next(judgeTask)
       .next(storeAnalysisTask);

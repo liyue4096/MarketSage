@@ -38,7 +38,8 @@ export class GeminiClient {
     }
 
     try {
-      const command = new GetSecretValueCommand({ SecretId: "GeminiApiKey" });
+      const secretId = process.env.GEMINI_API_KEY_SECRET || "marketsage/api/gemini";
+      const command = new GetSecretValueCommand({ SecretId: secretId });
       const response = await this.secretsManager.send(command);
       if (response.SecretString) {
         // Handle if secret is JSON or plain string

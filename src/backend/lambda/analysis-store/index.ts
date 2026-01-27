@@ -11,13 +11,9 @@
  * Single Table Design - all data in one item for efficient retrieval
  */
 
-import { DynamoDBClient } from '../../lambda-layers/shared/nodejs/node_modules/@aws-sdk/client-dynamodb';
-import {
-  DynamoDBDocumentClient,
-  PutCommand,
-  QueryCommand,
-  GetCommand
-} from '../../lambda-layers/shared/nodejs/node_modules/@aws-sdk/lib-dynamodb';
+// Use require for Lambda runtime compatibility
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
 
 // Types for GAN analysis results
 interface ThesisPoint {
@@ -68,7 +64,7 @@ interface StoreAnalysisEvent {
   action: 'store-analysis' | 'query-analysis' | 'query-by-signature' | 'query-by-ticker-date';
   // For store-analysis
   triggerDate?: string;
-  triggerType?: '20MA' | '60MA' | '250MA';  // Added 20MA
+  triggerType?: '20MA' | '60MA' | '250MA';
   closePrice?: number;
   peers?: string[];
   bullOpening?: AgentOutput;
