@@ -4,7 +4,7 @@ import React from 'react';
 import { StockReport } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getVerdictColor } from '@/lib/utils';
+import { getVerdictColor, formatDate } from '@/lib/utils';
 import { TrendingUp, Award, Calendar } from 'lucide-react';
 
 interface VerdictHeaderProps {
@@ -31,11 +31,7 @@ export default function VerdictHeader({ report }: VerdictHeaderProps) {
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Calendar className="w-4 h-4" />
-              {new Date(report.triggerDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
+              {formatDate(report.triggerDate)}
             </div>
           </div>
 
