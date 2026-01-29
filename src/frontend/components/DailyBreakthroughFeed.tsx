@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StockReport, DailyBreakthrough } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,18 +22,18 @@ export default function DailyBreakthroughFeed({
 
   const currentBreakthrough = breakthroughs.find(b => b.date === selectedDate) || breakthroughs[0];
 
-  // Auto-select first report when date changes
-  useEffect(() => {
-    if (currentBreakthrough?.reports.length > 0) {
-      // Check if current selected report is from the new date
-      const isSelectedReportInCurrentDate = currentBreakthrough.reports.some(
-        r => r.ticker === selectedReport?.ticker
-      );
-      if (!isSelectedReportInCurrentDate) {
-        onSelectReport(currentBreakthrough.reports[0]);
-      }
+  // Handle date change - select first report from new date
+  const handleDateChange = (newDate: string) => {
+    console.log('[Feed] Date changed to:', newDate);
+    setSelectedDate(newDate);
+
+    // Immediately select first report from the new date
+    const newBreakthrough = breakthroughs.find(b => b.date === newDate);
+    if (newBreakthrough && newBreakthrough.reports.length > 0) {
+      console.log('[Feed] Selecting first report:', newBreakthrough.reports[0].ticker);
+      onSelectReport(newBreakthrough.reports[0]);
     }
-  }, [selectedDate, currentBreakthrough]);
+  };
 
   return (
     <div className="w-80 border-r border-gray-200 bg-gray-50 h-screen overflow-hidden flex flex-col">
@@ -52,7 +52,7 @@ export default function DailyBreakthroughFeed({
           </label>
           <select
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={(e) => handleDateChange(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {breakthroughs.map((breakthrough) => (
@@ -73,7 +73,7 @@ export default function DailyBreakthroughFeed({
 
           {currentBreakthrough.reports.map((report) => (
             <Card
-              key={report.ticker}
+              key={`${selectedDate}-${report.ticker}`}
               className={`p-3 cursor-pointer transition-all hover:shadow-md ${
                 selectedReport?.ticker === report.ticker
                   ? 'ring-2 ring-blue-500 bg-blue-50'
