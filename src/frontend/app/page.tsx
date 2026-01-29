@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DailyBreakthroughFeed from '@/components/DailyBreakthroughFeed';
 import AdversarialAnalysisView from '@/components/AdversarialAnalysisView';
 import { StockReport, DailyBreakthrough } from '@/types';
@@ -12,28 +12,36 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const data = await fetchDailyBreakthroughs();
-        setBreakthroughs(data);
-        // Select first report by default
-        if (data.length > 0 && data[0].reports.length > 0) {
-          setSelectedReport(data[0].reports[0]);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load data');
-      } finally {
-        setLoading(false);
+  const loadData = useCallback(async () => {
+    console.log('[Home] Starting loadData');
+    try {
+      setLoading(true);
+      const data = await fetchDailyBreakthroughs();
+      console.log('[Home] Data received, breakthroughs:', data.length);
+      setBreakthroughs(data);
+      // Select first report by default
+      if (data.length > 0 && data[0].reports.length > 0) {
+        console.log('[Home] Setting selected report:', data[0].reports[0].ticker);
+        setSelectedReport(data[0].reports[0]);
       }
+      console.log('[Home] Setting loading to false');
+      setLoading(false);
+    } catch (err) {
+      console.error('[Home] Error loading data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+      setLoading(false);
     }
-    loadData();
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  console.log('[Home] Render - loading:', loading, 'error:', error, 'breakthroughs:', breakthroughs.length);
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
+      <div key="loading" className="flex h-screen items-center justify-center bg-slate-900">
         <div className="text-slate-400">Loading reports...</div>
       </div>
     );
@@ -41,7 +49,7 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
+      <div key="error" className="flex h-screen items-center justify-center bg-slate-900">
         <div className="text-red-400">Error: {error}</div>
       </div>
     );
@@ -49,14 +57,14 @@ export default function Home() {
 
   if (breakthroughs.length === 0) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
+      <div key="empty" className="flex h-screen items-center justify-center bg-slate-900">
         <div className="text-slate-400">No reports available</div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div key="main" className="flex h-screen overflow-hidden">
       <DailyBreakthroughFeed
         breakthroughs={breakthroughs}
         selectedReport={selectedReport}
