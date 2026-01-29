@@ -169,7 +169,13 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
                     }))];
             case 2:
                 result = _b.sent();
-                dates = __spreadArray([], new Set((result.Items || []).map(function (item) { return item.triggerDate; })), true).sort().reverse();
+                console.log('[ApiHandler] Scan result count:', (result.Items || []).length);
+                console.log('[ApiHandler] First item:', JSON.stringify(result.Items?.[0]));
+                var allDates = (result.Items || []).map(function (item) { return item.triggerDate; });
+                console.log('[ApiHandler] All dates:', JSON.stringify(allDates));
+                var uniqueDates = Array.from(new Set(allDates)).filter(Boolean);
+                console.log('[ApiHandler] Unique dates:', JSON.stringify(uniqueDates));
+                dates = uniqueDates.sort().reverse();
                 return [2 /*return*/, {
                         statusCode: 200,
                         headers: headers,
