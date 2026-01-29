@@ -20,8 +20,15 @@ export interface StockReport {
   confidence: number;
   primaryCatalyst: string;
   peerTable: PeerMetric[];
+  // Round 1: Opening Arguments
   bullThesis: DebatePoint[];
   bearThesis: DebatePoint[];
+  // Round 2: Rebuttals
+  rebuttals?: Rebuttals;
+  // Round 3: Final Defense
+  bullDefense?: DebatePoint[];
+  bearDefense?: DebatePoint[];
+  // Conclusion
   consensusSummary: string[];
   reportContent: string;
   appendix: string;
@@ -33,6 +40,20 @@ export interface DebatePoint {
   evidence: string;
   source?: string;
   sourceUrl?: string;
+}
+
+export interface RebuttalPoint {
+  originalPoint: string;
+  rebuttal: string;
+  evidence: string;
+  source?: string;
+  dataDate?: string;
+  strengthOfRebuttal: number;
+}
+
+export interface Rebuttals {
+  bullRebuttals: RebuttalPoint[];
+  bearRebuttals: RebuttalPoint[];
 }
 
 export interface DailyBreakthrough {

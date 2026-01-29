@@ -41,6 +41,9 @@ export default function AdversarialAnalysisView({ report }: AdversarialAnalysisV
         <DebateStage
           bullThesis={report.bullThesis}
           bearThesis={report.bearThesis}
+          rebuttals={report.rebuttals}
+          bullDefense={report.bullDefense}
+          bearDefense={report.bearDefense}
         />
 
         {/* Consensus Summary */}

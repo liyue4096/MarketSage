@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { StockReport, DailyBreakthrough } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, getVerdictColor, getIntensityColor } from '@/lib/utils';
+import { formatDate, getVerdictColor } from '@/lib/utils';
 import { Calendar, TrendingUp } from 'lucide-react';
 
 interface DailyBreakthroughFeedProps {
@@ -100,22 +100,6 @@ export default function DailyBreakthroughFeed({
                     </Badge>
                   </div>
                   <div className="text-xs text-gray-600 mt-0.5">{report.companyName}</div>
-                </div>
-
-                {/* Intensity Bar */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${getIntensityColor(report.breakthroughIntensity)} transition-all`}
-                      style={{
-                        width: report.breakthroughIntensity === 'High' ? '100%' :
-                               report.breakthroughIntensity === 'Medium' ? '66%' : '33%'
-                      }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-gray-500 font-medium">
-                    {report.breakthroughIntensity}
-                  </span>
                 </div>
 
                 {/* Verdict */}

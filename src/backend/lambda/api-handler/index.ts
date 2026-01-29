@@ -19,6 +19,22 @@ interface DynamoThesisPoint {
 interface DynamoThesis {
   thesis: DynamoThesisPoint[];
   primaryRisk?: string;
+  primaryCatalyst?: string;
+  thinkingTrace?: string;
+}
+
+interface DynamoRebuttalPoint {
+  originalPoint: string;
+  rebuttal: string;
+  evidence: string;
+  source?: string;
+  dataDate?: string;
+  strengthOfRebuttal: number;
+}
+
+interface DynamoRebuttals {
+  bullRebuttals: DynamoRebuttalPoint[];
+  bearRebuttals: DynamoRebuttalPoint[];
   thinkingTrace?: string;
 }
 
@@ -35,6 +51,9 @@ interface DynamoAnalysisRecord {
   thoughtSignature: string;
   bullOpening?: DynamoThesis;
   bearOpening?: DynamoThesis;
+  rebuttals?: DynamoRebuttals;
+  bullDefense?: DynamoThesis;
+  bearDefense?: DynamoThesis;
   peers?: Array<{
     ticker: string;
     companyName: string;
@@ -62,6 +81,20 @@ interface DebatePoint {
   sourceUrl?: string;
 }
 
+interface RebuttalPoint {
+  originalPoint: string;
+  rebuttal: string;
+  evidence: string;
+  source?: string;
+  dataDate?: string;
+  strengthOfRebuttal: number;
+}
+
+interface Rebuttals {
+  bullRebuttals: RebuttalPoint[];
+  bearRebuttals: RebuttalPoint[];
+}
+
 interface StockReport {
   ticker: string;
   companyName: string;
@@ -72,8 +105,15 @@ interface StockReport {
   confidence: number;
   primaryCatalyst: string;
   peerTable: PeerMetric[];
+  // Round 1: Opening Arguments
   bullThesis: DebatePoint[];
   bearThesis: DebatePoint[];
+  // Round 2: Rebuttals
+  rebuttals?: Rebuttals;
+  // Round 3: Final Defense
+  bullDefense?: DebatePoint[];
+  bearDefense?: DebatePoint[];
+  // Conclusion
   consensusSummary: string[];
   reportContent: string;
   appendix: string;
@@ -91,6 +131,29 @@ function transformToStockReport(record: DynamoAnalysisRecord): StockReport {
       source: t.source || t.dataDate,
       sourceUrl: undefined,
     }));
+  };
+
+  // Transform rebuttals
+  const transformRebuttals = (rebuttals?: DynamoRebuttals): Rebuttals | undefined => {
+    if (!rebuttals) return undefined;
+    return {
+      bullRebuttals: (rebuttals.bullRebuttals || []).map((r) => ({
+        originalPoint: r.originalPoint,
+        rebuttal: r.rebuttal,
+        evidence: r.evidence,
+        source: r.source,
+        dataDate: r.dataDate,
+        strengthOfRebuttal: r.strengthOfRebuttal,
+      })),
+      bearRebuttals: (rebuttals.bearRebuttals || []).map((r) => ({
+        originalPoint: r.originalPoint,
+        rebuttal: r.rebuttal,
+        evidence: r.evidence,
+        source: r.source,
+        dataDate: r.dataDate,
+        strengthOfRebuttal: r.strengthOfRebuttal,
+      })),
+    };
   };
 
   // Transform peers to peer table format
@@ -153,8 +216,15 @@ function transformToStockReport(record: DynamoAnalysisRecord): StockReport {
     confidence: record.confidence,
     primaryCatalyst: record.primaryCatalyst || 'Technical Breakout',
     peerTable: transformPeers(record.peers),
+    // Round 1: Opening Arguments
     bullThesis: transformThesis(record.bullOpening),
     bearThesis: transformThesis(record.bearOpening),
+    // Round 2: Rebuttals
+    rebuttals: transformRebuttals(record.rebuttals),
+    // Round 3: Final Defense
+    bullDefense: record.bullDefense ? transformThesis(record.bullDefense) : undefined,
+    bearDefense: record.bearDefense ? transformThesis(record.bearDefense) : undefined,
+    // Conclusion
     consensusSummary: record.consensusSummary || [],
     reportContent: record.reportContent || '',
     appendix: buildAppendix(record.bullOpening, record.bearOpening),
