@@ -92,6 +92,8 @@ export default function DailyBreakthroughFeed({
                     <Badge className={`text-[10px] px-1.5 py-0.5 ${
                       report.triggerType === '250MA'
                         ? 'bg-purple-100 text-purple-700 border-purple-200'
+                        : report.triggerType === '20MA'
+                        ? 'bg-green-100 text-green-700 border-green-200'
                         : 'bg-blue-100 text-blue-700 border-blue-200'
                     }`}>
                       {report.triggerType}

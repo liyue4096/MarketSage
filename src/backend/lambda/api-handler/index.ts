@@ -66,7 +66,7 @@ interface StockReport {
   ticker: string;
   companyName: string;
   triggerDate: string;
-  triggerType: '60MA' | '250MA';
+  triggerType: '20MA' | '60MA' | '250MA';
   breakthroughIntensity: 'Low' | 'Medium' | 'High';
   verdict: 'Strong Buy' | 'Neutral' | 'Short';
   confidence: number;
@@ -132,14 +132,22 @@ function transformToStockReport(record: DynamoAnalysisRecord): StockReport {
   // Determine breakthrough intensity based on trigger type
   const getIntensity = (trigger: string): 'Low' | 'Medium' | 'High' => {
     if (trigger === '250MA') return 'High';
+    if (trigger === '20MA') return 'Low';
     return 'Medium';
+  };
+
+  // Map trigger type to valid values
+  const mapTriggerType = (trigger: string): '20MA' | '60MA' | '250MA' => {
+    if (trigger === '250MA') return '250MA';
+    if (trigger === '20MA') return '20MA';
+    return '60MA';
   };
 
   return {
     ticker: record.ticker,
     companyName: record.ticker, // TODO: Get from company lookup
     triggerDate: record.triggerDate,
-    triggerType: record.triggerType === '250MA' ? '250MA' : '60MA',
+    triggerType: mapTriggerType(record.triggerType),
     breakthroughIntensity: getIntensity(record.triggerType),
     verdict: mapVerdict(record.verdict),
     confidence: record.confidence,

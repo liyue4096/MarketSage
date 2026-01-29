@@ -14,7 +14,7 @@ export interface StockReport {
   ticker: string;
   companyName: string;
   triggerDate: string;
-  triggerType: '60MA' | '250MA';
+  triggerType: '20MA' | '60MA' | '250MA';
   breakthroughIntensity: 'Low' | 'Medium' | 'High';
   verdict: VerdictType;
   confidence: number;
