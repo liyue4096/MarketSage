@@ -1,82 +1,134 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useEffect, useReducer } from 'react';
+import DailyBreakthroughFeed from '@/components/DailyBreakthroughFeed';
+import AdversarialAnalysisView from '@/components/AdversarialAnalysisView';
 import { StockReport, DailyBreakthrough } from '@/types';
 import { fetchDailyBreakthroughs } from '@/lib/api';
 
-// Dynamic import to avoid SSR hydration issues
-const DailyBreakthroughFeed = dynamic(
-  () => import('@/components/DailyBreakthroughFeed'),
-  { ssr: false }
-);
-const AdversarialAnalysisView = dynamic(
-  () => import('@/components/AdversarialAnalysisView'),
-  { ssr: false }
-);
+// State type
+type State = {
+  status: 'mounting' | 'loading' | 'error' | 'empty' | 'ready';
+  breakthroughs: DailyBreakthrough[];
+  selectedReport: StockReport | null;
+  error: string | null;
+};
+
+// Action types
+type Action =
+  | { type: 'MOUNTED' }
+  | { type: 'LOADING' }
+  | { type: 'SUCCESS'; breakthroughs: DailyBreakthrough[]; selectedReport: StockReport | null }
+  | { type: 'ERROR'; error: string }
+  | { type: 'SELECT_REPORT'; report: StockReport };
+
+// Reducer for predictable state transitions
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'MOUNTED':
+      return { ...state, status: 'loading' };
+    case 'LOADING':
+      return { ...state, status: 'loading' };
+    case 'SUCCESS':
+      return {
+        ...state,
+        status: action.breakthroughs.length === 0 ? 'empty' : 'ready',
+        breakthroughs: action.breakthroughs,
+        selectedReport: action.selectedReport,
+        error: null,
+      };
+    case 'ERROR':
+      return { ...state, status: 'error', error: action.error };
+    case 'SELECT_REPORT':
+      return { ...state, selectedReport: action.report };
+    default:
+      return state;
+  }
+}
+
+const initialState: State = {
+  status: 'mounting',
+  breakthroughs: [],
+  selectedReport: null,
+  error: null,
+};
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
-  const [breakthroughs, setBreakthroughs] = useState<DailyBreakthrough[]>([]);
-  const [selectedReport, setSelectedReport] = useState<StockReport | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const [, forceUpdate] = useState({});
 
-  // Set mounted after hydration
+  // Handle mounting and data loading
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
+    let cancelled = false;
 
     async function loadData() {
-      console.log('[Home] Starting loadData');
+      console.log('[Home] Starting loadData, current status:', state.status);
+
+      if (state.status === 'mounting') {
+        dispatch({ type: 'MOUNTED' });
+        return;
+      }
+
+      if (state.status !== 'loading') {
+        return;
+      }
+
       try {
-        setLoading(true);
         const data = await fetchDailyBreakthroughs();
         console.log('[Home] Data received, breakthroughs:', data.length);
-        setBreakthroughs(data);
-        if (data.length > 0 && data[0].reports.length > 0) {
-          console.log('[Home] Setting selected report:', data[0].reports[0].ticker);
-          setSelectedReport(data[0].reports[0]);
+
+        if (cancelled) return;
+
+        const selectedReport = data.length > 0 && data[0].reports.length > 0
+          ? data[0].reports[0]
+          : null;
+
+        if (selectedReport) {
+          console.log('[Home] Setting selected report:', selectedReport.ticker);
         }
-        setLoading(false);
+
+        dispatch({ type: 'SUCCESS', breakthroughs: data, selectedReport });
+        // Force a re-render after state update
+        setTimeout(() => forceUpdate({}), 0);
       } catch (err) {
         console.error('[Home] Error loading data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load data');
-        setLoading(false);
+        if (!cancelled) {
+          dispatch({ type: 'ERROR', error: err instanceof Error ? err.message : 'Failed to load data' });
+        }
       }
     }
+
     loadData();
-  }, [mounted]);
 
-  // Don't render anything until mounted (prevents hydration mismatch)
-  if (!mounted) {
+    return () => { cancelled = true; };
+  }, [state.status]);
+
+  const handleSelectReport = (report: StockReport) => {
+    dispatch({ type: 'SELECT_REPORT', report });
+  };
+
+  console.log('[Home] Render - status:', state.status, 'breakthroughs:', state.breakthroughs.length);
+
+  // Render based on status
+  if (state.status === 'mounting' || state.status === 'loading') {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-900">
-        <div className="text-slate-400">Loading...</div>
+        <div className="text-slate-400">
+          {state.status === 'mounting' ? 'Initializing...' : 'Loading reports...'}
+        </div>
       </div>
     );
   }
 
-  if (loading) {
+  if (state.status === 'error') {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-900">
-        <div className="text-slate-400">Loading reports...</div>
+        <div className="text-red-400">Error: {state.error}</div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
-        <div className="text-red-400">Error: {error}</div>
-      </div>
-    );
-  }
-
-  if (breakthroughs.length === 0) {
+  if (state.status === 'empty') {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-900">
         <div className="text-slate-400">No reports available</div>
@@ -84,14 +136,15 @@ export default function Home() {
     );
   }
 
+  // status === 'ready'
   return (
     <div className="flex h-screen overflow-hidden">
       <DailyBreakthroughFeed
-        breakthroughs={breakthroughs}
-        selectedReport={selectedReport}
-        onSelectReport={setSelectedReport}
+        breakthroughs={state.breakthroughs}
+        selectedReport={state.selectedReport}
+        onSelectReport={handleSelectReport}
       />
-      <AdversarialAnalysisView report={selectedReport} />
+      <AdversarialAnalysisView report={state.selectedReport} />
     </div>
   );
 }
