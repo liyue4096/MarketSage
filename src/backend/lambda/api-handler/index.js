@@ -1,12 +1,86 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.handler = void 0;
-/**
- * API Handler Lambda
- * Handles frontend requests via API Gateway
- * Routes: GET /reports, GET /reports/{ticker}, GET /dates, GET /health
- */
-const handler = async (event) => {
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
+
+// Transform DynamoDB record to frontend StockReport format
+function transformToStockReport(record) {
+    // Transform thesis points
+    const transformThesis = (thesis) => {
+        if (!thesis?.thesis)
+            return [];
+        return thesis.thesis.map((t) => ({
+            point: t.point,
+            evidence: t.evidence,
+            source: t.source || t.dataDate,
+            sourceUrl: undefined,
+        }));
+    };
+    // Transform peers to peer table format
+    const transformPeers = (peers) => {
+        if (!peers || peers.length === 0)
+            return [];
+        return peers.map((p, idx) => ({
+            ticker: p.ticker,
+            companyName: p.companyName || p.ticker,
+            price: p.price || 0,
+            peRatio: p.peRatio || 0,
+            rsi: 50,
+            volumeDelta: 1.0,
+            relativePerfomance: idx === 0 ? 0 : -5 * idx,
+        }));
+    };
+    // Build appendix from thinking traces (full content, no truncation)
+    const buildAppendix = (bull, bear) => {
+        const parts = ['[AI THINKING TRACE]'];
+        if (bull?.thinkingTrace) {
+            parts.push('\n=== BULL AGENT ===');
+            parts.push(bull.thinkingTrace);
+        }
+        if (bear?.thinkingTrace) {
+            parts.push('\n=== BEAR AGENT ===');
+            parts.push(bear.thinkingTrace);
+        }
+        return parts.join('\n');
+    };
+    // Map verdict to expected values
+    const mapVerdict = (v) => {
+        const lower = v.toLowerCase();
+        if (lower.includes('buy') || lower.includes('bull'))
+            return 'Strong Buy';
+        if (lower.includes('short') || lower.includes('bear') || lower.includes('sell'))
+            return 'Short';
+        return 'Neutral';
+    };
+    // Determine breakthrough intensity based on trigger type
+    const getIntensity = (trigger) => {
+        if (trigger === '250MA')
+            return 'High';
+        return 'Medium';
+    };
+    return {
+        ticker: record.ticker,
+        companyName: record.ticker,
+        triggerDate: record.triggerDate,
+        triggerType: record.triggerType === '250MA' ? '250MA' : '60MA',
+        breakthroughIntensity: getIntensity(record.triggerType),
+        verdict: mapVerdict(record.verdict),
+        confidence: record.confidence,
+        primaryCatalyst: record.primaryCatalyst || 'Technical Breakout',
+        peerTable: transformPeers(record.peers),
+        bullThesis: transformThesis(record.bullOpening),
+        bearThesis: transformThesis(record.bearOpening),
+        consensusSummary: record.consensusSummary || [],
+        reportContent: record.reportContent || '',
+        appendix: buildAppendix(record.bullOpening, record.bearOpening),
+        thoughtSignature: record.thoughtSignature,
+    };
+}
+
+exports.handler = async (event) => {
     const { httpMethod, path, pathParameters, queryStringParameters } = event;
     console.log(`[ApiHandler] ${httpMethod} ${path}`);
     const headers = {
@@ -16,7 +90,7 @@ const handler = async (event) => {
     };
     try {
         // Health check
-        if (path === '/health') {
+        if (path === '/health' || path === '/prod/health') {
             return {
                 statusCode: 200,
                 headers,
@@ -24,40 +98,102 @@ const handler = async (event) => {
             };
         }
         // Get available dates
-        if (path === '/dates' && httpMethod === 'GET') {
-            // TODO: Query Aurora for distinct report dates
+        if ((path === '/dates' || path === '/prod/dates') && httpMethod === 'GET') {
+            const result = await docClient.send(new ScanCommand({
+                TableName: TABLE_NAME,
+                FilterExpression: 'entityType = :et',
+                ExpressionAttributeValues: {
+                    ':et': 'ANALYSIS_REPORT',
+                },
+                ProjectionExpression: 'triggerDate',
+            }));
+            const dates = [...new Set((result.Items || []).map((item) => item.triggerDate))].sort().reverse();
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify({ dates: [] }),
+                body: JSON.stringify({ dates }),
             };
         }
         // Get reports for a date
-        if (path === '/reports' && httpMethod === 'GET') {
-            const date = queryStringParameters?.date || new Date().toISOString().split('T')[0];
-            // TODO: Query Aurora for reports by date
+        if ((path === '/reports' || path === '/prod/reports') && httpMethod === 'GET') {
+            const date = queryStringParameters?.date;
+            if (!date) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ error: 'date query parameter is required' }),
+                };
+            }
+            const result = await docClient.send(new ScanCommand({
+                TableName: TABLE_NAME,
+                FilterExpression: 'triggerDate = :date AND entityType = :et',
+                ExpressionAttributeValues: {
+                    ':date': date,
+                    ':et': 'ANALYSIS_REPORT',
+                },
+            }));
+            const reports = (result.Items || []).map((item) => transformToStockReport(item));
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify({ date, reports: [] }),
+                body: JSON.stringify({ date, reports }),
             };
         }
         // Get specific report by ticker
-        if (path.startsWith('/reports/') && pathParameters?.ticker && httpMethod === 'GET') {
-            const { ticker } = pathParameters;
+        if ((path.startsWith('/reports/') || path.startsWith('/prod/reports/')) && httpMethod === 'GET') {
+            const ticker = pathParameters?.ticker || path.split('/').pop();
             const date = queryStringParameters?.date;
-            // TODO: Query Aurora for specific report
+            if (!ticker) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ error: 'ticker is required' }),
+                };
+            }
+            let result;
+            if (date) {
+                result = await docClient.send(new QueryCommand({
+                    TableName: TABLE_NAME,
+                    IndexName: 'GSI2',
+                    KeyConditionExpression: 'GSI2PK = :pk AND GSI2SK = :sk',
+                    ExpressionAttributeValues: {
+                        ':pk': `TICKER#${ticker}`,
+                        ':sk': date,
+                    },
+                }));
+            }
+            else {
+                result = await docClient.send(new QueryCommand({
+                    TableName: TABLE_NAME,
+                    IndexName: 'GSI2',
+                    KeyConditionExpression: 'GSI2PK = :pk',
+                    ExpressionAttributeValues: {
+                        ':pk': `TICKER#${ticker}`,
+                    },
+                    ScanIndexForward: false,
+                    Limit: 1,
+                }));
+            }
+            const item = result.Items?.[0];
+            if (!item) {
+                return {
+                    statusCode: 404,
+                    headers,
+                    body: JSON.stringify({ error: 'Report not found', ticker, date }),
+                };
+            }
+            const report = transformToStockReport(item);
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify({ ticker, date, report: null }),
+                body: JSON.stringify({ ticker, date: report.triggerDate, report }),
             };
         }
         // Route not found
         return {
             statusCode: 404,
             headers,
-            body: JSON.stringify({ error: 'Not Found' }),
+            body: JSON.stringify({ error: 'Not Found', path }),
         };
     }
     catch (error) {
@@ -65,9 +201,7 @@ const handler = async (event) => {
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: 'Internal Server Error' }),
+            body: JSON.stringify({ error: 'Internal Server Error', message: error.message }),
         };
     }
 };
-exports.handler = handler;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJpbmRleC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFFQTs7OztHQUlHO0FBQ0ksTUFBTSxPQUFPLEdBQTJCLEtBQUssRUFBRSxLQUFLLEVBQWtDLEVBQUU7SUFDN0YsTUFBTSxFQUFFLFVBQVUsRUFBRSxJQUFJLEVBQUUsY0FBYyxFQUFFLHFCQUFxQixFQUFFLEdBQUcsS0FBSyxDQUFDO0lBRTFFLE9BQU8sQ0FBQyxHQUFHLENBQUMsZ0JBQWdCLFVBQVUsSUFBSSxJQUFJLEVBQUUsQ0FBQyxDQUFDO0lBRWxELE1BQU0sT0FBTyxHQUFHO1FBQ2QsY0FBYyxFQUFFLGtCQUFrQjtRQUNsQyw2QkFBNkIsRUFBRSxHQUFHO1FBQ2xDLDhCQUE4QixFQUFFLHNDQUFzQztLQUN2RSxDQUFDO0lBRUYsSUFBSSxDQUFDO1FBQ0gsZUFBZTtRQUNmLElBQUksSUFBSSxLQUFLLFNBQVMsRUFBRSxDQUFDO1lBQ3ZCLE9BQU87Z0JBQ0wsVUFBVSxFQUFFLEdBQUc7Z0JBQ2YsT0FBTztnQkFDUCxJQUFJLEVBQUUsSUFBSSxDQUFDLFNBQVMsQ0FBQyxFQUFFLE1BQU0sRUFBRSxTQUFTLEVBQUUsU0FBUyxFQUFFLElBQUksSUFBSSxFQUFFLENBQUMsV0FBVyxFQUFFLEVBQUUsQ0FBQzthQUNqRixDQUFDO1FBQ0osQ0FBQztRQUVELHNCQUFzQjtRQUN0QixJQUFJLElBQUksS0FBSyxRQUFRLElBQUksVUFBVSxLQUFLLEtBQUssRUFBRSxDQUFDO1lBQzlDLCtDQUErQztZQUMvQyxPQUFPO2dCQUNMLFVBQVUsRUFBRSxHQUFHO2dCQUNmLE9BQU87Z0JBQ1AsSUFBSSxFQUFFLElBQUksQ0FBQyxTQUFTLENBQUMsRUFBRSxLQUFLLEVBQUUsRUFBRSxFQUFFLENBQUM7YUFDcEMsQ0FBQztRQUNKLENBQUM7UUFFRCx5QkFBeUI7UUFDekIsSUFBSSxJQUFJLEtBQUssVUFBVSxJQUFJLFVBQVUsS0FBSyxLQUFLLEVBQUUsQ0FBQztZQUNoRCxNQUFNLElBQUksR0FBRyxxQkFBcUIsRUFBRSxJQUFJLElBQUksSUFBSSxJQUFJLEVBQUUsQ0FBQyxXQUFXLEVBQUUsQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUM7WUFDbkYseUNBQXlDO1lBQ3pDLE9BQU87Z0JBQ0wsVUFBVSxFQUFFLEdBQUc7Z0JBQ2YsT0FBTztnQkFDUCxJQUFJLEVBQUUsSUFBSSxDQUFDLFNBQVMsQ0FBQyxFQUFFLElBQUksRUFBRSxPQUFPLEVBQUUsRUFBRSxFQUFFLENBQUM7YUFDNUMsQ0FBQztRQUNKLENBQUM7UUFFRCxnQ0FBZ0M7UUFDaEMsSUFBSSxJQUFJLENBQUMsVUFBVSxDQUFDLFdBQVcsQ0FBQyxJQUFJLGNBQWMsRUFBRSxNQUFNLElBQUksVUFBVSxLQUFLLEtBQUssRUFBRSxDQUFDO1lBQ25GLE1BQU0sRUFBRSxNQUFNLEVBQUUsR0FBRyxjQUFjLENBQUM7WUFDbEMsTUFBTSxJQUFJLEdBQUcscUJBQXFCLEVBQUUsSUFBSSxDQUFDO1lBQ3pDLHlDQUF5QztZQUN6QyxPQUFPO2dCQUNMLFVBQVUsRUFBRSxHQUFHO2dCQUNmLE9BQU87Z0JBQ1AsSUFBSSxFQUFFLElBQUksQ0FBQyxTQUFTLENBQUMsRUFBRSxNQUFNLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxJQUFJLEVBQUUsQ0FBQzthQUNyRCxDQUFDO1FBQ0osQ0FBQztRQUVELGtCQUFrQjtRQUNsQixPQUFPO1lBQ0wsVUFBVSxFQUFFLEdBQUc7WUFDZixPQUFPO1lBQ1AsSUFBSSxFQUFFLElBQUksQ0FBQyxTQUFTLENBQUMsRUFBRSxLQUFLLEVBQUUsV0FBVyxFQUFFLENBQUM7U0FDN0MsQ0FBQztJQUNKLENBQUM7SUFBQyxPQUFPLEtBQUssRUFBRSxDQUFDO1FBQ2YsT0FBTyxDQUFDLEtBQUssQ0FBQyxxQkFBcUIsRUFBRSxLQUFLLENBQUMsQ0FBQztRQUM1QyxPQUFPO1lBQ0wsVUFBVSxFQUFFLEdBQUc7WUFDZixPQUFPO1lBQ1AsSUFBSSxFQUFFLElBQUksQ0FBQyxTQUFTLENBQUMsRUFBRSxLQUFLLEVBQUUsdUJBQXVCLEVBQUUsQ0FBQztTQUN6RCxDQUFDO0lBQ0osQ0FBQztBQUNILENBQUMsQ0FBQztBQXBFVyxRQUFBLE9BQU8sV0FvRWxCIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQVBJR2F0ZXdheVByb3h5SGFuZGxlciwgQVBJR2F0ZXdheVByb3h5UmVzdWx0IH0gZnJvbSAnYXdzLWxhbWJkYSc7XG5cbi8qKlxuICogQVBJIEhhbmRsZXIgTGFtYmRhXG4gKiBIYW5kbGVzIGZyb250ZW5kIHJlcXVlc3RzIHZpYSBBUEkgR2F0ZXdheVxuICogUm91dGVzOiBHRVQgL3JlcG9ydHMsIEdFVCAvcmVwb3J0cy97dGlja2VyfSwgR0VUIC9kYXRlcywgR0VUIC9oZWFsdGhcbiAqL1xuZXhwb3J0IGNvbnN0IGhhbmRsZXI6IEFQSUdhdGV3YXlQcm94eUhhbmRsZXIgPSBhc3luYyAoZXZlbnQpOiBQcm9taXNlPEFQSUdhdGV3YXlQcm94eVJlc3VsdD4gPT4ge1xuICBjb25zdCB7IGh0dHBNZXRob2QsIHBhdGgsIHBhdGhQYXJhbWV0ZXJzLCBxdWVyeVN0cmluZ1BhcmFtZXRlcnMgfSA9IGV2ZW50O1xuXG4gIGNvbnNvbGUubG9nKGBbQXBpSGFuZGxlcl0gJHtodHRwTWV0aG9kfSAke3BhdGh9YCk7XG5cbiAgY29uc3QgaGVhZGVycyA9IHtcbiAgICAnQ29udGVudC1UeXBlJzogJ2FwcGxpY2F0aW9uL2pzb24nLFxuICAgICdBY2Nlc3MtQ29udHJvbC1BbGxvdy1PcmlnaW4nOiAnKicsXG4gICAgJ0FjY2Vzcy1Db250cm9sLUFsbG93LUhlYWRlcnMnOiAnQ29udGVudC1UeXBlLEF1dGhvcml6YXRpb24sWC1BcGktS2V5JyxcbiAgfTtcblxuICB0cnkge1xuICAgIC8vIEhlYWx0aCBjaGVja1xuICAgIGlmIChwYXRoID09PSAnL2hlYWx0aCcpIHtcbiAgICAgIHJldHVybiB7XG4gICAgICAgIHN0YXR1c0NvZGU6IDIwMCxcbiAgICAgICAgaGVhZGVycyxcbiAgICAgICAgYm9keTogSlNPTi5zdHJpbmdpZnkoeyBzdGF0dXM6ICdoZWFsdGh5JywgdGltZXN0YW1wOiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCkgfSksXG4gICAgICB9O1xuICAgIH1cblxuICAgIC8vIEdldCBhdmFpbGFibGUgZGF0ZXNcbiAgICBpZiAocGF0aCA9PT0gJy9kYXRlcycgJiYgaHR0cE1ldGhvZCA9PT0gJ0dFVCcpIHtcbiAgICAgIC8vIFRPRE86IFF1ZXJ5IEF1cm9yYSBmb3IgZGlzdGluY3QgcmVwb3J0IGRhdGVzXG4gICAgICByZXR1cm4ge1xuICAgICAgICBzdGF0dXNDb2RlOiAyMDAsXG4gICAgICAgIGhlYWRlcnMsXG4gICAgICAgIGJvZHk6IEpTT04uc3RyaW5naWZ5KHsgZGF0ZXM6IFtdIH0pLFxuICAgICAgfTtcbiAgICB9XG5cbiAgICAvLyBHZXQgcmVwb3J0cyBmb3IgYSBkYXRlXG4gICAgaWYgKHBhdGggPT09ICcvcmVwb3J0cycgJiYgaHR0cE1ldGhvZCA9PT0gJ0dFVCcpIHtcbiAgICAgIGNvbnN0IGRhdGUgPSBxdWVyeVN0cmluZ1BhcmFtZXRlcnM/LmRhdGUgfHwgbmV3IERhdGUoKS50b0lTT1N0cmluZygpLnNwbGl0KCdUJylbMF07XG4gICAgICAvLyBUT0RPOiBRdWVyeSBBdXJvcmEgZm9yIHJlcG9ydHMgYnkgZGF0ZVxuICAgICAgcmV0dXJuIHtcbiAgICAgICAgc3RhdHVzQ29kZTogMjAwLFxuICAgICAgICBoZWFkZXJzLFxuICAgICAgICBib2R5OiBKU09OLnN0cmluZ2lmeSh7IGRhdGUsIHJlcG9ydHM6IFtdIH0pLFxuICAgICAgfTtcbiAgICB9XG5cbiAgICAvLyBHZXQgc3BlY2lmaWMgcmVwb3J0IGJ5IHRpY2tlclxuICAgIGlmIChwYXRoLnN0YXJ0c1dpdGgoJy9yZXBvcnRzLycpICYmIHBhdGhQYXJhbWV0ZXJzPy50aWNrZXIgJiYgaHR0cE1ldGhvZCA9PT0gJ0dFVCcpIHtcbiAgICAgIGNvbnN0IHsgdGlja2VyIH0gPSBwYXRoUGFyYW1ldGVycztcbiAgICAgIGNvbnN0IGRhdGUgPSBxdWVyeVN0cmluZ1BhcmFtZXRlcnM/LmRhdGU7XG4gICAgICAvLyBUT0RPOiBRdWVyeSBBdXJvcmEgZm9yIHNwZWNpZmljIHJlcG9ydFxuICAgICAgcmV0dXJuIHtcbiAgICAgICAgc3RhdHVzQ29kZTogMjAwLFxuICAgICAgICBoZWFkZXJzLFxuICAgICAgICBib2R5OiBKU09OLnN0cmluZ2lmeSh7IHRpY2tlciwgZGF0ZSwgcmVwb3J0OiBudWxsIH0pLFxuICAgICAgfTtcbiAgICB9XG5cbiAgICAvLyBSb3V0ZSBub3QgZm91bmRcbiAgICByZXR1cm4ge1xuICAgICAgc3RhdHVzQ29kZTogNDA0LFxuICAgICAgaGVhZGVycyxcbiAgICAgIGJvZHk6IEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6ICdOb3QgRm91bmQnIH0pLFxuICAgIH07XG4gIH0gY2F0Y2ggKGVycm9yKSB7XG4gICAgY29uc29sZS5lcnJvcignW0FwaUhhbmRsZXJdIEVycm9yOicsIGVycm9yKTtcbiAgICByZXR1cm4ge1xuICAgICAgc3RhdHVzQ29kZTogNTAwLFxuICAgICAgaGVhZGVycyxcbiAgICAgIGJvZHk6IEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6ICdJbnRlcm5hbCBTZXJ2ZXIgRXJyb3InIH0pLFxuICAgIH07XG4gIH1cbn07XG4iXX0=

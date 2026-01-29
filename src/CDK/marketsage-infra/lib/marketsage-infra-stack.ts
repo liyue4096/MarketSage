@@ -287,9 +287,15 @@ export class MarketsageInfraStack extends cdk.Stack {
       securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
-      environment: commonEnv,
+      environment: {
+        ...commonEnv,
+        ANALYSIS_TABLE_NAME: analysisTable.tableName,
+      },
       layers: [lambdaLayer],
     });
+
+    // Grant DynamoDB read access to API handler
+    analysisTable.grantReadData(apiHandlerLambda);
 
     // Data Loader Lambda - Loads market data from Polygon into database
     const dataLoaderLambda = new lambda.Function(this, 'DataLoaderLambda', {
@@ -415,6 +421,14 @@ export class MarketsageInfraStack extends cdk.Stack {
       retryOnServiceExceptions: true,
     });
 
+    // Add retry with exponential backoff
+    scanTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(5),
+      maxAttempts: 3,
+      backoffRate: 2,
+    });
+
     // Step 2: Sequential Bull and Bear thesis generation
     const bullTask = new tasks.LambdaInvoke(this, 'GenerateBullThesis', {
       lambdaFunction: bullAgentLambda,
@@ -423,11 +437,27 @@ export class MarketsageInfraStack extends cdk.Stack {
       retryOnServiceExceptions: true,
     });
 
+    // Add retry with exponential backoff for Gemini API transient failures
+    bullTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(10),
+      maxAttempts: 3,
+      backoffRate: 2, // 10s, 20s, 40s
+    });
+
     const bearTask = new tasks.LambdaInvoke(this, 'GenerateBearThesis', {
       lambdaFunction: bearAgentLambda,
       payloadResponseOnly: true,  // Extracts just the Lambda response payload
       resultPath: '$.bearThesis',
       retryOnServiceExceptions: true,
+    });
+
+    // Add retry with exponential backoff for Gemini API transient failures
+    bearTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(10),
+      maxAttempts: 3,
+      backoffRate: 2,
     });
 
     // SEQUENTIAL EXECUTION: Run bull then bear (not parallel) for reliability
@@ -456,6 +486,14 @@ export class MarketsageInfraStack extends cdk.Stack {
       retryOnServiceExceptions: true,
     });
 
+    // Add retry with exponential backoff
+    rebuttalTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(10),
+      maxAttempts: 3,
+      backoffRate: 2,
+    });
+
     // Step 4: Judge synthesis - receives all data
     const judgeTask = new tasks.LambdaInvoke(this, 'SynthesizeVerdict', {
       lambdaFunction: judgeAgentLambda,
@@ -467,6 +505,14 @@ export class MarketsageInfraStack extends cdk.Stack {
       payloadResponseOnly: true,
       resultPath: '$.verdict',
       retryOnServiceExceptions: true,
+    });
+
+    // Add retry with exponential backoff
+    judgeTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(10),
+      maxAttempts: 3,
+      backoffRate: 2,
     });
 
     // Step 5: Store analysis to DynamoDB
@@ -485,6 +531,14 @@ export class MarketsageInfraStack extends cdk.Stack {
       }),
       payloadResponseOnly: true,
       retryOnServiceExceptions: true,
+    });
+
+    // Add retry with exponential backoff
+    storeAnalysisTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(5),
+      maxAttempts: 3,
+      backoffRate: 2,
     });
 
     // Map state to process each triggered stock - SEQUENTIAL, one at a time
@@ -565,6 +619,15 @@ export class MarketsageInfraStack extends cdk.Stack {
         action: 'load-snapshot',
       }),
       resultPath: '$.snapshotResult',
+      retryOnServiceExceptions: true,
+    });
+
+    // Add retry with exponential backoff for transient failures
+    loadSnapshotTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(5),
+      maxAttempts: 3,
+      backoffRate: 2, // 5s, 10s, 20s
     });
 
     // Step 2: Initialize SMA batch processing
@@ -582,6 +645,15 @@ export class MarketsageInfraStack extends cdk.Stack {
         'batchSize': 50,
       }),
       resultPath: '$.smaResult',
+      retryOnServiceExceptions: true,
+    });
+
+    // Add retry with exponential backoff for transient failures
+    loadSmaBatchTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(5),
+      maxAttempts: 3,
+      backoffRate: 2,
     });
 
     // Step 2b: Update batch state for next iteration (only if data exists)
@@ -603,6 +675,15 @@ export class MarketsageInfraStack extends cdk.Stack {
         action: 'generate-signals',
       }),
       outputPath: '$.Payload',
+      retryOnServiceExceptions: true,
+    });
+
+    // Add retry with exponential backoff for transient failures
+    generateSignalsTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(5),
+      maxAttempts: 3,
+      backoffRate: 2,
     });
 
     // Build the SMA loop: load batch → check if more → (update state → loop) or (generate signals)
@@ -676,6 +757,11 @@ export class MarketsageInfraStack extends cdk.Stack {
         stageName: 'prod',
         throttlingBurstLimit: 100,
         throttlingRateLimit: 50,
+        // Enable 5-minute caching for GET requests
+        cachingEnabled: true,
+        cacheTtl: cdk.Duration.minutes(5),
+        cacheClusterEnabled: true,
+        cacheClusterSize: '0.5', // Smallest size (0.5 GB) - ~$14/month
       },
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,

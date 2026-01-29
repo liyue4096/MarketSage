@@ -1,18 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Download, Search, Code2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, Search, Code2, ExternalLink } from 'lucide-react';
 
 interface DeepThinkingAppendixProps {
   appendix: string;
   thoughtSignature: string;
+  ticker: string;
+  triggerDate: string;
 }
 
 export default function DeepThinkingAppendix({
   appendix,
-  thoughtSignature
+  thoughtSignature,
+  ticker,
+  triggerDate
 }: DeepThinkingAppendixProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,11 +76,23 @@ export default function DeepThinkingAppendix({
             )}
           </Button>
         </div>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-xs text-gray-400">Thought Signature:</span>
-          <code className="text-xs text-blue-300 bg-gray-800 px-2 py-1 rounded">
-            {thoughtSignature}
-          </code>
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">Thought Signature:</span>
+            <code className="text-xs text-blue-300 bg-gray-800 px-2 py-1 rounded">
+              {thoughtSignature}
+            </code>
+          </div>
+          <Link href={`/report/${ticker}/${triggerDate}`} target="_blank">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-600 text-white border-blue-500 hover:bg-blue-700 hover:text-white"
+            >
+              <ExternalLink className="w-4 h-4 mr-1" />
+              View Full Report
+            </Button>
+          </Link>
         </div>
       </CardHeader>
 

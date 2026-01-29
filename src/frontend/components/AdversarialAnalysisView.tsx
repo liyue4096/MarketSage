@@ -50,6 +50,8 @@ export default function AdversarialAnalysisView({ report }: AdversarialAnalysisV
         <DeepThinkingAppendix
           appendix={report.appendix}
           thoughtSignature={report.thoughtSignature}
+          ticker={report.ticker}
+          triggerDate={report.triggerDate}
         />
       </div>
     </div>

@@ -28,21 +28,21 @@ CREATE INDEX IF NOT EXISTS idx_ticker_metadata_sector ON ticker_metadata(sector)
 CREATE TABLE IF NOT EXISTS price_history (
     trade_date DATE NOT NULL,
     ticker VARCHAR(10) NOT NULL,
-    o NUMERIC(12,4),
-    h NUMERIC(12,4),
-    l NUMERIC(12,4),
-    c NUMERIC(12,4) NOT NULL,
+    o NUMERIC(18,4),
+    h NUMERIC(18,4),
+    l NUMERIC(18,4),
+    c NUMERIC(18,4) NOT NULL,
     v BIGINT,
-    vw NUMERIC(12,4),
-    change NUMERIC(18,10),       -- Today's change from previous day (high precision)
-    change_pct NUMERIC(18,10),   -- Today's change percentage (high precision)
+    vw NUMERIC(18,4),
+    change NUMERIC(20,10),       -- Today's change from previous day (high precision)
+    change_pct NUMERIC(20,10),   -- Today's change percentage (high precision)
     -- Previous day OHLCV (optional, only from snapshot endpoint)
-    prev_o NUMERIC(12,4),
-    prev_h NUMERIC(12,4),
-    prev_l NUMERIC(12,4),
-    prev_c NUMERIC(12,4),
+    prev_o NUMERIC(18,4),
+    prev_h NUMERIC(18,4),
+    prev_l NUMERIC(18,4),
+    prev_c NUMERIC(18,4),
     prev_v BIGINT,
-    prev_vw NUMERIC(12,4),
+    prev_vw NUMERIC(18,4),
     PRIMARY KEY (trade_date, ticker),
     FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)
 ) PARTITION BY RANGE (trade_date);
@@ -66,7 +66,7 @@ END $$;
 -- Migration: Add change column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change NUMERIC(18,10);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change NUMERIC(20,10);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -74,7 +74,7 @@ END $$;
 -- Migration: Alter change column to high precision
 DO $$
 BEGIN
-    ALTER TABLE price_history ALTER COLUMN change TYPE NUMERIC(18,10);
+    ALTER TABLE price_history ALTER COLUMN change TYPE NUMERIC(20,10);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -82,7 +82,7 @@ END $$;
 -- Migration: Add change_pct column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change_pct NUMERIC(18,10);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change_pct NUMERIC(20,10);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -90,7 +90,7 @@ END $$;
 -- Migration: Alter change_pct column to high precision
 DO $$
 BEGIN
-    ALTER TABLE price_history ALTER COLUMN change_pct TYPE NUMERIC(18,10);
+    ALTER TABLE price_history ALTER COLUMN change_pct TYPE NUMERIC(20,10);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -98,7 +98,7 @@ END $$;
 -- Migration: Add prev_o column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_o NUMERIC(12,4);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_o NUMERIC(18,4);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -106,7 +106,7 @@ END $$;
 -- Migration: Add prev_h column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_h NUMERIC(12,4);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_h NUMERIC(18,4);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -114,7 +114,7 @@ END $$;
 -- Migration: Add prev_l column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_l NUMERIC(12,4);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_l NUMERIC(18,4);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -122,7 +122,7 @@ END $$;
 -- Migration: Add prev_c column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_c NUMERIC(12,4);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_c NUMERIC(18,4);
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -138,7 +138,47 @@ END $$;
 -- Migration: Add prev_vw column if it doesn't exist
 DO $$
 BEGIN
-    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_vw NUMERIC(12,4);
+    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_vw NUMERIC(18,4);
+EXCEPTION
+    WHEN others THEN NULL;
+END $$;
+
+-- Migration: Increase NUMERIC precision to prevent overflow errors
+-- Change NUMERIC(12,4) to NUMERIC(18,4) for price columns, NUMERIC(18,10) to NUMERIC(20,10) for change columns
+DO $$
+DECLARE
+    partition_name TEXT;
+BEGIN
+    -- First, alter the parent table
+    ALTER TABLE price_history ALTER COLUMN o TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN h TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN l TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN c TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN vw TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN prev_o TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN prev_h TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN prev_l TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN prev_c TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN prev_vw TYPE NUMERIC(18,4);
+    ALTER TABLE price_history ALTER COLUMN change TYPE NUMERIC(20,10);
+    ALTER TABLE price_history ALTER COLUMN change_pct TYPE NUMERIC(20,10);
+
+    -- Explicitly alter each partition (2020-2030)
+    FOR year IN 2020..2030 LOOP
+        partition_name := 'price_history_' || year;
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN o TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN h TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN l TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN c TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN vw TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_o TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_h TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_l TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_c TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_vw TYPE NUMERIC(18,4)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN change TYPE NUMERIC(20,10)', partition_name);
+        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN change_pct TYPE NUMERIC(20,10)', partition_name);
+    END LOOP;
 EXCEPTION
     WHEN others THEN NULL;
 END $$;
@@ -176,9 +216,9 @@ CREATE TABLE IF NOT EXISTS nasdaq_100 (
 CREATE TABLE IF NOT EXISTS sma (
     trade_date DATE NOT NULL,
     ticker VARCHAR(10) NOT NULL,
-    sma_20 NUMERIC(12,4),   -- 20-day Simple Moving Average
-    sma_60 NUMERIC(12,4),   -- 60-day Simple Moving Average
-    sma_250 NUMERIC(12,4),  -- 250-day Simple Moving Average
+    sma_20 NUMERIC(18,4),   -- 20-day Simple Moving Average
+    sma_60 NUMERIC(18,4),   -- 60-day Simple Moving Average
+    sma_250 NUMERIC(18,4),  -- 250-day Simple Moving Average
     last_updated TIMESTAMP DEFAULT NOW(),
     PRIMARY KEY (trade_date, ticker),
     FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)
@@ -993,11 +1033,9 @@ const handler = async (event) => {
     }
     catch (error) {
         console.error('[DataLoader] Error:', error);
-        return {
-            success: false,
-            action,
-            message: `Error: ${error instanceof Error ? error.message : String(error)}`,
-        };
+        // Throw the error so Step Functions can retry
+        // This allows the retry configuration with exponential backoff to work
+        throw error;
     }
     finally {
         if (pool) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StockReport, DailyBreakthrough } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,19 @@ export default function DailyBreakthroughFeed({
   const [selectedDate, setSelectedDate] = useState(breakthroughs[0]?.date || '');
 
   const currentBreakthrough = breakthroughs.find(b => b.date === selectedDate) || breakthroughs[0];
+
+  // Auto-select first report when date changes
+  useEffect(() => {
+    if (currentBreakthrough?.reports.length > 0) {
+      // Check if current selected report is from the new date
+      const isSelectedReportInCurrentDate = currentBreakthrough.reports.some(
+        r => r.ticker === selectedReport?.ticker
+      );
+      if (!isSelectedReportInCurrentDate) {
+        onSelectReport(currentBreakthrough.reports[0]);
+      }
+    }
+  }, [selectedDate, currentBreakthrough]);
 
   return (
     <div className="w-80 border-r border-gray-200 bg-gray-50 h-screen overflow-hidden flex flex-col">
