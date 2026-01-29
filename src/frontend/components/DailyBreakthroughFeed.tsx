@@ -25,13 +25,16 @@ export default function DailyBreakthroughFeed({
   // Handle date change - select first report from new date
   const handleDateChange = (newDate: string) => {
     console.log('[Feed] Date changed to:', newDate);
+    console.log('[Feed] All breakthroughs:', breakthroughs.map(b => ({ date: b.date, tickers: b.reports.map(r => r.ticker) })));
     setSelectedDate(newDate);
 
     // Immediately select first report from the new date
     const newBreakthrough = breakthroughs.find(b => b.date === newDate);
+    console.log('[Feed] Found breakthrough for date:', newBreakthrough?.date, 'with reports:', newBreakthrough?.reports.map(r => r.ticker));
     if (newBreakthrough && newBreakthrough.reports.length > 0) {
-      console.log('[Feed] Selecting first report:', newBreakthrough.reports[0].ticker);
-      onSelectReport(newBreakthrough.reports[0]);
+      const firstReport = newBreakthrough.reports[0];
+      console.log('[Feed] Selecting first report:', firstReport.ticker, 'from date:', firstReport.triggerDate);
+      onSelectReport(firstReport);
     }
   };
 
