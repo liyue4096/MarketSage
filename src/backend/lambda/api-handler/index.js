@@ -94,7 +94,7 @@ function transformToStockReport(record) {
 
     return {
         ticker: record.ticker,
-        companyName: record.ticker,
+        companyName: record.companyName || record.ticker,
         triggerDate: record.triggerDate,
         triggerType: mapTriggerType(record.triggerType),
         breakthroughIntensity: getIntensity(record.triggerType),
@@ -113,6 +113,9 @@ function transformToStockReport(record) {
         // Conclusion
         consensusSummary: record.consensusSummary || [],
         reportContent: record.reportContent || '',
+        // Chinese translations
+        reportContentChinese: record.reportContentChinese,
+        consensusSummaryChinese: record.consensusSummaryChinese,
         appendix: buildAppendix(record.bullOpening, record.bearOpening),
         thoughtSignature: record.thoughtSignature,
     };

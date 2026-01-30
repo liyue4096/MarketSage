@@ -40,6 +40,7 @@ interface DynamoRebuttals {
 
 interface DynamoAnalysisRecord {
   ticker: string;
+  companyName?: string;
   triggerDate: string;
   triggerType: string;
   closePrice: number;
@@ -48,6 +49,9 @@ interface DynamoAnalysisRecord {
   primaryCatalyst: string;
   consensusSummary: string[];
   reportContent: string;
+  // Chinese translations
+  reportContentChinese?: string;
+  consensusSummaryChinese?: string[];
   thoughtSignature: string;
   bullOpening?: DynamoThesis;
   bearOpening?: DynamoThesis;
@@ -116,6 +120,9 @@ interface StockReport {
   // Conclusion
   consensusSummary: string[];
   reportContent: string;
+  // Chinese translations
+  reportContentChinese?: string;
+  consensusSummaryChinese?: string[];
   appendix: string;
   thoughtSignature: string;
 }
@@ -208,7 +215,7 @@ function transformToStockReport(record: DynamoAnalysisRecord): StockReport {
 
   return {
     ticker: record.ticker,
-    companyName: record.ticker, // TODO: Get from company lookup
+    companyName: record.companyName || record.ticker, // Use stored company name
     triggerDate: record.triggerDate,
     triggerType: mapTriggerType(record.triggerType),
     breakthroughIntensity: getIntensity(record.triggerType),
@@ -227,6 +234,9 @@ function transformToStockReport(record: DynamoAnalysisRecord): StockReport {
     // Conclusion
     consensusSummary: record.consensusSummary || [],
     reportContent: record.reportContent || '',
+    // Chinese translations
+    reportContentChinese: record.reportContentChinese,
+    consensusSummaryChinese: record.consensusSummaryChinese,
     appendix: buildAppendix(record.bullOpening, record.bearOpening),
     thoughtSignature: record.thoughtSignature,
   };

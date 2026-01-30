@@ -32,7 +32,7 @@ const docClient = DynamoDBDocumentClient.from(client, {
 });
 // Store analysis results
 async function storeAnalysis(event) {
-    const { triggerDate, triggerType, closePrice, peers, bullOpening, bearOpening, rebuttals, bullDefense, bearDefense, judge } = event;
+    const { triggerDate, triggerType, closePrice, peers, companyName, bullOpening, bearOpening, rebuttals, bullDefense, bearDefense, judge, reportContentChinese, consensusSummaryChinese } = event;
     if (!judge || !bullOpening || !bearOpening) {
         throw new Error('Missing required analysis data (judge, bullOpening, bearOpening)');
     }
@@ -54,6 +54,7 @@ async function storeAnalysis(event) {
         entityType: 'ANALYSIS_REPORT',
         // Core fields
         ticker,
+        companyName: companyName || ticker,
         triggerDate,
         triggerType,
         closePrice,
@@ -64,6 +65,9 @@ async function storeAnalysis(event) {
         primaryCatalyst: judge.primaryCatalyst,
         consensusSummary: judge.consensusSummary,
         reportContent: judge.reportContent,
+        // Chinese translations (if provided)
+        reportContentChinese: reportContentChinese || null,
+        consensusSummaryChinese: consensusSummaryChinese || null,
         thoughtSignature,
         appendix: judge.appendix,
         // Round 1: Opening Arguments
@@ -104,11 +108,20 @@ async function storeAnalysis(event) {
         // TTL: Keep analyses for 2 years (optional, comment out if not needed)
         // ttl: Math.floor(Date.now() / 1000) + (2 * 365 * 24 * 60 * 60)
     };
-    await docClient.send(new PutCommand({
-        TableName: TABLE_NAME,
-        Item: item,
-        ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)'
-    }));
+    // If Chinese translation is being added, this is an update - allow overwrite
+    // Otherwise, prevent duplicate creation
+    if (reportContentChinese) {
+        await docClient.send(new PutCommand({
+            TableName: TABLE_NAME,
+            Item: item,
+        }));
+    } else {
+        await docClient.send(new PutCommand({
+            TableName: TABLE_NAME,
+            Item: item,
+            ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)'
+        }));
+    }
     return {
         success: true,
         action: 'store-analysis',

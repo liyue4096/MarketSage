@@ -7,13 +7,20 @@ import TrackComparisonMatrix from '@/components/analysis/TrackComparisonMatrix';
 import DebateStage from '@/components/analysis/DebateStage';
 import ConsensusSummary from '@/components/analysis/ConsensusSummary';
 import DeepThinkingAppendix from '@/components/analysis/DeepThinkingAppendix';
-import { FileText } from 'lucide-react';
+import { FileText, Globe } from 'lucide-react';
+
+export type Language = 'en' | 'zh';
 
 interface AdversarialAnalysisViewProps {
   report: StockReport | null;
 }
 
 export default function AdversarialAnalysisView({ report }: AdversarialAnalysisViewProps) {
+  const [language, setLanguage] = useState<Language>('en');
+
+  // Check if Chinese translation is available
+  const hasChineseTranslation = report?.reportContentChinese && report?.consensusSummaryChinese;
+
   if (!report) {
     return (
       <div className="flex-1 flex items-center justify-center bg-white">
@@ -31,6 +38,35 @@ export default function AdversarialAnalysisView({ report }: AdversarialAnalysisV
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Language Toggle */}
+        {hasChineseTranslation && (
+          <div className="flex justify-end">
+            <div className="inline-flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+              <Globe className="w-4 h-4 text-gray-500 ml-2" />
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  language === 'en'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                English
+              </button>
+              <button
+                onClick={() => setLanguage('zh')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  language === 'zh'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                中文
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Verdict Header */}
         <VerdictHeader report={report} />
 
@@ -47,7 +83,12 @@ export default function AdversarialAnalysisView({ report }: AdversarialAnalysisV
         />
 
         {/* Consensus Summary */}
-        <ConsensusSummary summary={report.consensusSummary} />
+        <ConsensusSummary
+          summary={language === 'zh' && report.consensusSummaryChinese
+            ? report.consensusSummaryChinese
+            : report.consensusSummary}
+          language={language}
+        />
 
         {/* Deep Thinking Appendix */}
         <DeepThinkingAppendix

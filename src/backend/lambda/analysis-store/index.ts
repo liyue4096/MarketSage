@@ -67,12 +67,16 @@ interface StoreAnalysisEvent {
   triggerType?: '20MA' | '60MA' | '250MA';
   closePrice?: number;
   peers?: string[];
+  companyName?: string;
   bullOpening?: AgentOutput;
   bearOpening?: AgentOutput;
   rebuttals?: RebuttalOutput;
   bullDefense?: AgentOutput;
   bearDefense?: AgentOutput;
   judge?: JudgeOutput;
+  // For Chinese translation (optional, added after initial store)
+  reportContentChinese?: string;
+  consensusSummaryChinese?: string[];
   // For query-analysis (by ticker)
   ticker?: string;
   // For query-by-signature
@@ -109,8 +113,9 @@ const docClient = DynamoDBDocumentClient.from(client, {
 // Store analysis results
 async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisResult> {
   const {
-    triggerDate, triggerType, closePrice, peers,
-    bullOpening, bearOpening, rebuttals, bullDefense, bearDefense, judge
+    triggerDate, triggerType, closePrice, peers, companyName,
+    bullOpening, bearOpening, rebuttals, bullDefense, bearDefense, judge,
+    reportContentChinese, consensusSummaryChinese
   } = event;
 
   if (!judge || !bullOpening || !bearOpening) {
@@ -140,6 +145,7 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
 
     // Core fields
     ticker,
+    companyName: companyName || ticker, // Fall back to ticker if not provided
     triggerDate,
     triggerType,
     closePrice,
@@ -151,6 +157,9 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
     primaryCatalyst: judge.primaryCatalyst,
     consensusSummary: judge.consensusSummary,
     reportContent: judge.reportContent,
+    // Chinese translations (if provided)
+    reportContentChinese: reportContentChinese || null,
+    consensusSummaryChinese: consensusSummaryChinese || null,
     thoughtSignature,
     appendix: judge.appendix,
 
@@ -197,11 +206,20 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
     // ttl: Math.floor(Date.now() / 1000) + (2 * 365 * 24 * 60 * 60)
   };
 
-  await docClient.send(new PutCommand({
-    TableName: TABLE_NAME,
-    Item: item,
-    ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)'
-  }));
+  // If Chinese translation is being added, this is an update - allow overwrite
+  // Otherwise, prevent duplicate creation
+  if (reportContentChinese) {
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: item,
+    }));
+  } else {
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: item,
+      ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)'
+    }));
+  }
 
   return {
     success: true,

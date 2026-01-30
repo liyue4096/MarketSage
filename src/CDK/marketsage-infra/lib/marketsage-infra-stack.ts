@@ -98,11 +98,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       writer: rds.ClusterInstance.serverlessV2('writer', {
         publiclyAccessible: false,
       }),
-      readers: [
-        rds.ClusterInstance.serverlessV2('reader', {
-          scaleWithWriter: true,
-        }),
-      ],
       storageEncrypted: true,
       backup: {
         retention: cdk.Duration.days(7),
@@ -160,7 +155,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(5),
-      memorySize: 512,
+      memorySize: 256,
       environment: {
         ...commonEnv,
         FINANCIAL_API_KEY_SECRET: 'marketsage/api/polygon', // Store API key in Secrets Manager
@@ -358,7 +353,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(5),
-      memorySize: 512,
+      memorySize: 256,
       environment: {
         ...commonEnv,
         ANALYSIS_TABLE_NAME: analysisTable.tableName,
@@ -658,7 +653,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       logs: {
         destination: new logs.LogGroup(this, 'StateMachineLogs', {
           logGroupName: '/aws/stepfunctions/marketsage-analysis',
-          retention: logs.RetentionDays.ONE_MONTH,
+          retention: logs.RetentionDays.TWO_WEEKS,
         }),
         level: stepfunctions.LogLevel.ALL,
       },
@@ -829,11 +824,6 @@ export class MarketsageInfraStack extends cdk.Stack {
         stageName: 'prod',
         throttlingBurstLimit: 100,
         throttlingRateLimit: 50,
-        // Enable 5-minute caching for GET requests
-        cachingEnabled: true,
-        cacheTtl: cdk.Duration.minutes(5),
-        cacheClusterEnabled: true,
-        cacheClusterSize: '0.5', // Smallest size (0.5 GB) - ~$14/month
       },
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
