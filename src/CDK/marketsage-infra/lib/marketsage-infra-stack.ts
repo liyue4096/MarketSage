@@ -93,7 +93,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
       securityGroups: [auroraSecurityGroup],
-      serverlessV2MinCapacity: 0.5,
+      serverlessV2MinCapacity: 0,
       serverlessV2MaxCapacity: 4,
       writer: rds.ClusterInstance.serverlessV2('writer', {
         publiclyAccessible: false,
@@ -235,6 +235,24 @@ export class MarketsageInfraStack extends cdk.Stack {
       securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
+      environment: {
+        ...commonEnv,
+        GEMINI_API_KEY_SECRET: 'marketsage/api/gemini',
+      },
+      layers: [lambdaLayer],
+    });
+
+    // Translate Agent Lambda - Translates reports to Chinese
+    const translateAgentLambda = new lambda.Function(this, 'TranslateAgentLambda', {
+      functionName: 'marketsage-translate-agent',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/translate-agent')),
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [lambdaSecurityGroup],
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 512,
       environment: {
         ...commonEnv,
         GEMINI_API_KEY_SECRET: 'marketsage/api/gemini',
@@ -393,7 +411,7 @@ export class MarketsageInfraStack extends cdk.Stack {
     const geminiSecretArn = `arn:aws:secretsmanager:${this.region}:${this.account}:secret:marketsage/api/gemini*`;
     const polygonSecretArn = `arn:aws:secretsmanager:${this.region}:${this.account}:secret:marketsage/api/polygon*`;
 
-    [bullAgentLambda, bearAgentLambda, rebuttalAgentLambda, judgeAgentLambda, retroExamLambda].forEach((fn) => {
+    [bullAgentLambda, bearAgentLambda, rebuttalAgentLambda, judgeAgentLambda, translateAgentLambda, retroExamLambda].forEach((fn) => {
       fn.addToRolePolicy(new iam.PolicyStatement({
         actions: ['secretsmanager:GetSecretValue'],
         resources: [geminiSecretArn],
@@ -524,6 +542,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         'triggerType.$': '$.triggerType',
         'closePrice.$': '$.closePrice',
         'peers.$': '$.peers',
+        'companyName.$': '$.companyName',
         'bullOpening.$': '$.bullThesis',
         'bearOpening.$': '$.bearThesis',
         'rebuttals.$': '$.rebuttals',
@@ -535,6 +554,57 @@ export class MarketsageInfraStack extends cdk.Stack {
 
     // Add retry with exponential backoff
     storeAnalysisTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(5),
+      maxAttempts: 3,
+      backoffRate: 2,
+    });
+
+    // Step 6: Translate report to Chinese
+    const translateTask = new tasks.LambdaInvoke(this, 'TranslateReport', {
+      lambdaFunction: translateAgentLambda,
+      payload: stepfunctions.TaskInput.fromObject({
+        'ticker.$': '$.combinedInput.ticker',
+        'triggerDate.$': '$.scanDate',
+        'reportContent.$': '$.verdict.reportContent',
+        'consensusSummary.$': '$.verdict.consensusSummary',
+      }),
+      payloadResponseOnly: true,
+      resultPath: '$.translation',
+      retryOnServiceExceptions: true,
+    });
+
+    // Add retry with exponential backoff
+    translateTask.addRetry({
+      errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
+      interval: cdk.Duration.seconds(10),
+      maxAttempts: 3,
+      backoffRate: 2,
+    });
+
+    // Step 7: Update stored analysis with Chinese translation
+    const updateTranslationTask = new tasks.LambdaInvoke(this, 'UpdateTranslation', {
+      lambdaFunction: analysisStoreLambda,
+      payload: stepfunctions.TaskInput.fromObject({
+        'action': 'store-analysis',
+        'triggerDate.$': '$.scanDate',
+        'triggerType.$': '$.triggerType',
+        'closePrice.$': '$.closePrice',
+        'peers.$': '$.peers',
+        'companyName.$': '$.companyName',
+        'bullOpening.$': '$.bullThesis',
+        'bearOpening.$': '$.bearThesis',
+        'rebuttals.$': '$.rebuttals',
+        'judge.$': '$.verdict',
+        'reportContentChinese.$': '$.translation.reportContentChinese',
+        'consensusSummaryChinese.$': '$.translation.consensusSummaryChinese',
+      }),
+      payloadResponseOnly: true,
+      retryOnServiceExceptions: true,
+    });
+
+    // Add retry with exponential backoff
+    updateTranslationTask.addRetry({
       errors: ['States.TaskFailed', 'Lambda.ServiceException', 'Lambda.AWSLambdaException', 'Lambda.SdkClientException'],
       interval: cdk.Duration.seconds(5),
       maxAttempts: 3,
@@ -556,13 +626,15 @@ export class MarketsageInfraStack extends cdk.Stack {
       },
     });
 
-    // Sequential chain: bull → bear → combine → rebuttal → judge → store
+    // Sequential chain: bull → bear → combine → rebuttal → judge → store → translate → update
     const stockProcessingChain = bullTask
       .next(bearTask)
       .next(combineTheses)
       .next(rebuttalTask)
       .next(judgeTask)
-      .next(storeAnalysisTask);
+      .next(storeAnalysisTask)
+      .next(translateTask)
+      .next(updateTranslationTask);
 
     processStockMap.itemProcessor(stockProcessingChain);
 
