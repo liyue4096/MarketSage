@@ -1,11 +1,60 @@
 import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { Pool } from 'pg';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
+const secretsClient = new SecretsManagerClient({});
 
 const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
+
+// PostgreSQL pool (lazy initialized)
+let pgPool: Pool | null = null;
+
+// Get PostgreSQL connection pool
+async function getDbPool(): Promise<Pool> {
+  if (pgPool) return pgPool;
+
+  const secretName = process.env.DB_SECRET_ARN || 'marketsage/aurora/credentials';
+  const command = new GetSecretValueCommand({ SecretId: secretName });
+  const response = await secretsClient.send(command);
+  const secret = JSON.parse(response.SecretString || '{}');
+
+  pgPool = new Pool({
+    host: secret.host || process.env.DB_CLUSTER_ENDPOINT,
+    port: secret.port || 5432,
+    database: secret.dbname || process.env.DB_NAME || 'marketsage',
+    user: secret.username,
+    password: secret.password,
+    max: 5,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 30000,
+  });
+
+  return pgPool;
+}
+
+// Signal types for API response
+interface MASignalResponse {
+  ticker: string;
+  companyName?: string;
+  signalDate: string;
+  closePrice: number;
+  priceChangePct: number;
+  ma20Signal: 'UP' | 'DOWN' | 'NONE';
+  ma60Signal: 'UP' | 'DOWN' | 'NONE';
+  ma250Signal: 'UP' | 'DOWN' | 'NONE';
+  source?: 'nasdaq_100' | 'russell_1000';
+}
+
+// Map database signal to frontend format
+function mapSignalDirection(signal: string | null): 'UP' | 'DOWN' | 'NONE' {
+  if (signal === 'CROSS_ABOVE') return 'UP';
+  if (signal === 'CROSS_BELOW') return 'DOWN';
+  return 'NONE';
+}
 
 // Types matching DynamoDB structure
 interface DynamoThesisPoint {
@@ -369,6 +418,86 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         statusCode: 200,
         headers,
         body: JSON.stringify({ ticker, date: report.triggerDate, report }),
+      };
+    }
+
+    // Get available signal dates
+    if ((path === '/signals/dates' || path === '/prod/signals/dates') && httpMethod === 'GET') {
+      console.log('[ApiHandler] Fetching signal dates');
+      const pool = await getDbPool();
+      const result = await pool.query(`
+        SELECT DISTINCT signal_date::text
+        FROM ma_signals
+        ORDER BY signal_date DESC
+        LIMIT 90
+      `);
+
+      const dates = result.rows.map((row) => row.signal_date);
+      console.log(`[ApiHandler] Found ${dates.length} signal dates`);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ dates }),
+      };
+    }
+
+    // Get signals for a specific date
+    if ((path === '/signals' || path === '/prod/signals') && httpMethod === 'GET') {
+      const date = queryStringParameters?.date;
+
+      if (!date) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'date query parameter is required' }),
+        };
+      }
+
+      console.log(`[ApiHandler] Fetching signals for date: ${date}`);
+      const pool = await getDbPool();
+
+      // Join with nasdaq_100 and russell_1000 to get company name and source
+      const result = await pool.query(`
+        SELECT
+          s.signal_date::text,
+          s.ticker,
+          COALESCE(n.name, r.name) as company_name,
+          s.close_price::float,
+          s.price_change_pct::float,
+          s.ma_20_signal,
+          s.ma_60_signal,
+          s.ma_250_signal,
+          CASE
+            WHEN n.ticker IS NOT NULL THEN 'nasdaq_100'
+            WHEN r.ticker IS NOT NULL THEN 'russell_1000'
+            ELSE NULL
+          END as source
+        FROM ma_signals s
+        LEFT JOIN nasdaq_100 n ON s.ticker = n.ticker
+        LEFT JOIN russell_1000 r ON s.ticker = r.ticker AND n.ticker IS NULL
+        WHERE s.signal_date = $1
+        ORDER BY s.price_change_pct DESC
+      `, [date]);
+
+      const signals: MASignalResponse[] = result.rows.map((row) => ({
+        ticker: row.ticker,
+        companyName: row.company_name,
+        signalDate: row.signal_date,
+        closePrice: row.close_price,
+        priceChangePct: row.price_change_pct,
+        ma20Signal: mapSignalDirection(row.ma_20_signal),
+        ma60Signal: mapSignalDirection(row.ma_60_signal),
+        ma250Signal: mapSignalDirection(row.ma_250_signal),
+        source: row.source,
+      }));
+
+      console.log(`[ApiHandler] Found ${signals.length} signals for ${date}`);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ date, signals }),
       };
     }
 

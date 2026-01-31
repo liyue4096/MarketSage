@@ -63,3 +63,23 @@ export interface DailyBreakthrough {
   date: string;
   reports: StockReport[];
 }
+
+// Signal types for the Signals page
+export type SignalDirection = 'UP' | 'DOWN' | 'NONE';
+
+export interface MASignal {
+  ticker: string;
+  companyName?: string;
+  signalDate: string;
+  closePrice: number;
+  priceChangePct: number;
+  ma20Signal: SignalDirection;
+  ma60Signal: SignalDirection;
+  ma250Signal: SignalDirection;
+  source?: 'nasdaq_100' | 'russell_1000';
+}
+
+export interface DailySignals {
+  date: string;
+  signals: MASignal[];
+}

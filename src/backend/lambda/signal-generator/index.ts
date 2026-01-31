@@ -123,7 +123,7 @@ async function getDbPool(): Promise<Pool> {
     password: secret.password,
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 30000,  // 30s to handle Aurora Serverless cold starts
   });
 }
 

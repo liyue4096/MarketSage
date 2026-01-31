@@ -1,4 +1,4 @@
-import { StockReport, DailyBreakthrough } from '@/types';
+import { StockReport, DailyBreakthrough, MASignal, DailySignals } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ojn2366vej.execute-api.us-west-2.amazonaws.com/prod';
 
@@ -46,4 +46,36 @@ export async function fetchDailyBreakthroughs(): Promise<DailyBreakthrough[]> {
 
   console.log('[API] Total breakthroughs loaded:', breakthroughs.length);
   return breakthroughs;
+}
+
+// Fetch available signal dates
+export async function fetchSignalDates(): Promise<string[]> {
+  console.log('[API] Fetching signal dates from:', `${API_URL}/signals/dates`);
+  try {
+    const res = await fetch(`${API_URL}/signals/dates`);
+    console.log('[API] Signal dates response status:', res.status);
+    if (!res.ok) throw new Error(`Failed to fetch signal dates: ${res.status}`);
+    const data = await res.json();
+    console.log('[API] Signal dates received:', data.dates?.length || 0, 'dates');
+    return data.dates || [];
+  } catch (err) {
+    console.error('[API] Error fetching signal dates:', err);
+    throw err;
+  }
+}
+
+// Fetch signals for a specific date
+export async function fetchSignalsByDate(date: string): Promise<MASignal[]> {
+  console.log('[API] Fetching signals for date:', date);
+  try {
+    const res = await fetch(`${API_URL}/signals?date=${date}`);
+    console.log('[API] Signals response status:', res.status);
+    if (!res.ok) throw new Error(`Failed to fetch signals: ${res.status}`);
+    const data = await res.json();
+    console.log('[API] Signals received for', date, ':', data.signals?.length || 0, 'signals');
+    return data.signals || [];
+  } catch (err) {
+    console.error('[API] Error fetching signals for', date, ':', err);
+    throw err;
+  }
 }

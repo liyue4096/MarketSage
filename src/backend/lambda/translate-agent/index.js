@@ -65,7 +65,7 @@ Respond with ONLY valid JSON. No text before or after.
 }`;
 
   try {
-    const { text } = await gemini.generate(prompt, systemInstruction);
+    const { text } = await gemini.generateThinking(prompt, systemInstruction);
 
     // Extract JSON from response
     let cleanJson = text.replace(/```json\n?|\n?```/g, '').trim();

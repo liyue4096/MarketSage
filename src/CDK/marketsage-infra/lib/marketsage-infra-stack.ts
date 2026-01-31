@@ -544,6 +544,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         'judge.$': '$.verdict',
       }),
       payloadResponseOnly: true,
+      resultPath: '$.storeResult',  // Preserve state for subsequent steps
       retryOnServiceExceptions: true,
     });
 
@@ -847,6 +848,13 @@ export class MarketsageInfraStack extends cdk.Stack {
 
     const healthResource = api.root.addResource('health');
     healthResource.addMethod('GET', lambdaIntegration); // Health check
+
+    // Signals API routes
+    const signalsResource = api.root.addResource('signals');
+    signalsResource.addMethod('GET', lambdaIntegration); // Get signals for a date
+
+    const signalDatesResource = signalsResource.addResource('dates');
+    signalDatesResource.addMethod('GET', lambdaIntegration); // Get available signal dates
 
     // API Key for basic protection
     const apiKey = api.addApiKey('MarketsageApiKey', {

@@ -74,9 +74,10 @@ const handler = async (event) => {
   try {
     // Call report-selector Lambda to get tickers
     // Use !== undefined to properly handle 0 values
+    // Accept both tradeDate and scanDate (scanDate comes from Step Function input)
     const payload = {
       action: 'select-tickers',
-      tradeDate: event.tradeDate, // Optional: can be passed from workflow
+      tradeDate: event.tradeDate || event.scanDate, // Accept both formats from workflow
       nasdaqLimit: event.nasdaqLimit !== undefined ? event.nasdaqLimit : 4,
       russellLimit: event.russellLimit !== undefined ? event.russellLimit : 4,
       skipDays: event.skipDays !== undefined ? event.skipDays : 14,

@@ -1,0 +1,19 @@
+{
+  "name": "api-handler",
+  "version": "1.0.0",
+  "description": "API Handler Lambda for MarketSage frontend",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.974.0",
+    "@aws-sdk/client-secrets-manager": "^3.974.0",
+    "@aws-sdk/lib-dynamodb": "^3.974.0",
+    "@types/aws-lambda": "^8.10.159",
+    "@types/node": "^25.0.10",
+    "@types/pg": "^8.16.0",
+    "typescript": "^5.9.3"
+  }
+}
