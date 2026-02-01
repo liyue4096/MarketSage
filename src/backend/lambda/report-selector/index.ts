@@ -394,16 +394,16 @@ async function selectTickers(
       }
 
       return {
-        ticker: row.ticker,
-        name: row.name,
+        ticker: row.ticker as string,
+        name: row.name as string,
         source: 'nasdaq_100' as const,
-        weight: parseFloat(row.weight),
-        closePrice: row.close_price ? parseFloat(row.close_price) : undefined,
-        priceChangePct: row.price_change_pct ? parseFloat(row.price_change_pct) : undefined,
+        weight: parseFloat(row.weight as string),
+        closePrice: row.close_price ? parseFloat(row.close_price as string) : undefined,
+        priceChangePct: row.price_change_pct ? parseFloat(row.price_change_pct as string) : undefined,
         signals: {
-          ma20: row.ma_20_signal || 'NONE',
-          ma60: row.ma_60_signal || 'NONE',
-          ma250: row.ma_250_signal || 'NONE',
+          ma20: (row.ma_20_signal as string) || 'NONE',
+          ma60: (row.ma_60_signal as string) || 'NONE',
+          ma250: (row.ma_250_signal as string) || 'NONE',
         },
         triggerType,
       };
@@ -419,16 +419,16 @@ async function selectTickers(
       }
 
       return {
-        ticker: row.ticker,
-        name: row.name,
+        ticker: row.ticker as string,
+        name: row.name as string,
         source: 'russell_1000' as const,
-        signalCount: parseInt(row.signal_count),
-        closePrice: row.close_price ? parseFloat(row.close_price) : undefined,
-        priceChangePct: row.price_change_pct ? parseFloat(row.price_change_pct) : undefined,
+        signalCount: parseInt(row.signal_count as string),
+        closePrice: row.close_price ? parseFloat(row.close_price as string) : undefined,
+        priceChangePct: row.price_change_pct ? parseFloat(row.price_change_pct as string) : undefined,
         signals: {
-          ma20: row.ma_20_signal || 'NONE',
-          ma60: row.ma_60_signal || 'NONE',
-          ma250: row.ma_250_signal || 'NONE',
+          ma20: (row.ma_20_signal as string) || 'NONE',
+          ma60: (row.ma_60_signal as string) || 'NONE',
+          ma250: (row.ma_250_signal as string) || 'NONE',
         },
         triggerType,
       };
@@ -458,8 +458,8 @@ async function selectTickers(
       nasdaq: nasdaqTickers,
       russell: russellTickers,
       stats: {
-        nasdaqCandidates: parseInt(nasdaqCountResult.rows[0].count),
-        russellCandidates: parseInt(russellCountResult.rows[0].count),
+        nasdaqCandidates: parseInt(nasdaqCountResult.rows[0].count as string),
+        russellCandidates: parseInt(russellCountResult.rows[0].count as string),
         skippedTickers: skipTickersArray,
         selectedNasdaq: nasdaqTickers.length,
         selectedRussell: russellTickers.length,
@@ -476,12 +476,15 @@ type Handler<TEvent = any, TResult = any> = (event: TEvent, context: any) => Pro
 
 export const handler: Handler<ReportSelectorEvent, ReportSelectorResult> = async (event) => {
   const action = event.action || 'select-tickers';
+  console.log('[ReportSelector] Received event:', JSON.stringify(event));
+  console.log('[ReportSelector] event.tradeDate =', event.tradeDate);
   const tradeDate = event.tradeDate || getCurrentTradingDay();
   const nasdaqLimit = event.nasdaqLimit !== undefined ? event.nasdaqLimit : 4;
   const russellLimit = event.russellLimit !== undefined ? event.russellLimit : 4;
   const skipDays = event.skipDays !== undefined ? event.skipDays : 14;
 
   console.log(`[ReportSelector] Starting with action: ${action}, tradeDate: ${tradeDate}`);
+  console.log(`[ReportSelector] Using tradeDate: ${tradeDate} (from event.tradeDate: ${event.tradeDate} or current: ${getCurrentTradingDay()})`);
   console.log(`[ReportSelector] Limits: nasdaq=${nasdaqLimit}, russell=${russellLimit}, skipDays=${skipDays}`);
 
   let pool: DataApiPool | null = null;

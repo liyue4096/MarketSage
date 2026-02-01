@@ -66,6 +66,7 @@ function getPeers(ticker) {
 
 const handler = async (event) => {
   console.log('[TechnicalScanner] Starting scan');
+  console.log('[TechnicalScanner] Received event:', JSON.stringify(event));
 
   const lambdaClient = new LambdaClient({
     region: process.env.AWS_REGION || 'us-west-2',

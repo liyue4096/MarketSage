@@ -292,11 +292,14 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
         switch (_b.label) {
             case 0:
                 action = event.action || 'select-tickers';
+                console.log("[ReportSelector] Received event:", JSON.stringify(event));
+                console.log("[ReportSelector] event.tradeDate =", event.tradeDate);
                 tradeDate = event.tradeDate || getCurrentTradingDay();
                 nasdaqLimit = event.nasdaqLimit !== undefined ? event.nasdaqLimit : 4;
                 russellLimit = event.russellLimit !== undefined ? event.russellLimit : 4;
                 skipDays = event.skipDays !== undefined ? event.skipDays : 14;
                 console.log("[ReportSelector] Starting with action: ".concat(action, ", tradeDate: ").concat(tradeDate));
+                console.log("[ReportSelector] Using tradeDate:", tradeDate, "(from event.tradeDate:", event.tradeDate, "or current:", getCurrentTradingDay(), ")");
                 console.log("[ReportSelector] Limits: nasdaq=".concat(nasdaqLimit, ", russell=").concat(russellLimit, ", skipDays=").concat(skipDays));
                 pool = null;
                 _b.label = 1;
