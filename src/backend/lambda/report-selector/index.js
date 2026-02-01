@@ -281,14 +281,19 @@ async function selectTickers(pool, tradeDate, nasdaqLimit, russellLimit, skipTic
         console.log(`[ReportSelector] Found ${russellResult.rows.length} Russell candidates`);
         // Transform results
         const nasdaqTickers = nasdaqResult.rows.map(row => {
-            // Determine trigger type based on signals (prioritize 250 > 60 > 20)
-            let triggerType = '20MA';
+            // Collect ALL active signals (not just highest priority)
+            const activeSignals = [];
             if (row.ma_250_signal && row.ma_250_signal !== 'NONE') {
-                triggerType = '250MA';
+                activeSignals.push('250MA');
             }
-            else if (row.ma_60_signal && row.ma_60_signal !== 'NONE') {
-                triggerType = '60MA';
+            if (row.ma_60_signal && row.ma_60_signal !== 'NONE') {
+                activeSignals.push('60MA');
             }
+            if (row.ma_20_signal && row.ma_20_signal !== 'NONE') {
+                activeSignals.push('20MA');
+            }
+            // For backwards compatibility, triggerType is the highest priority signal
+            const triggerType = activeSignals[0] || '20MA';
             return {
                 ticker: row.ticker,
                 name: row.name,
@@ -302,17 +307,23 @@ async function selectTickers(pool, tradeDate, nasdaqLimit, russellLimit, skipTic
                     ma250: row.ma_250_signal || 'NONE',
                 },
                 triggerType,
+                activeSignals, // New field with all active signals
             };
         });
         const russellTickers = russellResult.rows.map(row => {
-            // Determine trigger type based on signals (prioritize 250 > 60 > 20)
-            let triggerType = '20MA';
+            // Collect ALL active signals (not just highest priority)
+            const activeSignals = [];
             if (row.ma_250_signal && row.ma_250_signal !== 'NONE') {
-                triggerType = '250MA';
+                activeSignals.push('250MA');
             }
-            else if (row.ma_60_signal && row.ma_60_signal !== 'NONE') {
-                triggerType = '60MA';
+            if (row.ma_60_signal && row.ma_60_signal !== 'NONE') {
+                activeSignals.push('60MA');
             }
+            if (row.ma_20_signal && row.ma_20_signal !== 'NONE') {
+                activeSignals.push('20MA');
+            }
+            // For backwards compatibility, triggerType is the highest priority signal
+            const triggerType = activeSignals[0] || '20MA';
             return {
                 ticker: row.ticker,
                 name: row.name,
@@ -326,6 +337,7 @@ async function selectTickers(pool, tradeDate, nasdaqLimit, russellLimit, skipTic
                     ma250: row.ma_250_signal || 'NONE',
                 },
                 triggerType,
+                activeSignals, // New field with all active signals
             };
         });
         // Get total candidate counts (without limits) for stats

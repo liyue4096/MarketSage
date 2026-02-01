@@ -89,15 +89,19 @@ export default function DailyBreakthroughFeed({
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-gray-900">{report.ticker}</span>
-                    <Badge className={`text-[10px] px-1.5 py-0.5 ${
-                      report.triggerType === '250MA'
-                        ? 'bg-purple-100 text-purple-700 border-purple-200'
-                        : report.triggerType === '20MA'
-                        ? 'bg-green-100 text-green-700 border-green-200'
-                        : 'bg-blue-100 text-blue-700 border-blue-200'
-                    }`}>
-                      {report.triggerType}
-                    </Badge>
+                    <div className="flex gap-1">
+                      {(report.activeSignals || [report.triggerType]).map((signal) => (
+                        <Badge key={signal} className={`text-[10px] px-1.5 py-0.5 ${
+                          signal === '250MA'
+                            ? 'bg-purple-100 text-purple-700 border-purple-200'
+                            : signal === '20MA'
+                            ? 'bg-green-100 text-green-700 border-green-200'
+                            : 'bg-blue-100 text-blue-700 border-blue-200'
+                        }`}>
+                          {signal}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                   <div className="text-xs text-gray-600 mt-0.5">{report.companyName}</div>
                 </div>

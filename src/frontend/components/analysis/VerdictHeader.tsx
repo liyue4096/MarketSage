@@ -23,9 +23,13 @@ export default function VerdictHeader({ report }: VerdictHeaderProps) {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-bold text-gray-900">{report.ticker}</h1>
-                <Badge className="bg-blue-600 text-white">
-                  {report.triggerType} Breakthrough
-                </Badge>
+                <div className="flex gap-2">
+                  {(report.activeSignals || [report.triggerType]).map((signal) => (
+                    <Badge key={signal} className="bg-blue-600 text-white">
+                      {signal}
+                    </Badge>
+                  ))}
+                </div>
               </div>
               <p className="text-sm text-gray-600 mt-1">{report.companyName}</p>
             </div>

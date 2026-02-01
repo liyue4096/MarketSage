@@ -14,7 +14,8 @@ export interface StockReport {
   ticker: string;
   companyName: string;
   triggerDate: string;
-  triggerType: '20MA' | '60MA' | '250MA';
+  triggerType: '20MA' | '60MA' | '250MA'; // Primary signal for backwards compatibility
+  activeSignals?: ('20MA' | '60MA' | '250MA')[]; // All active signals
   breakthroughIntensity: 'Low' | 'Medium' | 'High';
   verdict: VerdictType;
   confidence: number;

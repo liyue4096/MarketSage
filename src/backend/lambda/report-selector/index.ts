@@ -181,7 +181,8 @@ interface SelectedTicker {
   };
   priceChangePct?: number;
   closePrice?: number;
-  triggerType?: '20MA' | '60MA' | '250MA';
+  triggerType?: '20MA' | '60MA' | '250MA'; // Primary/highest priority signal
+  activeSignals?: ('20MA' | '60MA' | '250MA')[]; // All active signals
 }
 
 interface ReportSelectorEvent {
@@ -384,13 +385,20 @@ async function selectTickers(
 
     // Transform results
     const nasdaqTickers: SelectedTicker[] = nasdaqResult.rows.map(row => {
-      // Determine trigger type based on signals (prioritize 250 > 60 > 20)
-      let triggerType: '20MA' | '60MA' | '250MA' = '20MA';
+      // Collect ALL active signals (not just highest priority)
+      const activeSignals: ('20MA' | '60MA' | '250MA')[] = [];
       if (row.ma_250_signal && row.ma_250_signal !== 'NONE') {
-        triggerType = '250MA';
-      } else if (row.ma_60_signal && row.ma_60_signal !== 'NONE') {
-        triggerType = '60MA';
+        activeSignals.push('250MA');
       }
+      if (row.ma_60_signal && row.ma_60_signal !== 'NONE') {
+        activeSignals.push('60MA');
+      }
+      if (row.ma_20_signal && row.ma_20_signal !== 'NONE') {
+        activeSignals.push('20MA');
+      }
+
+      // For backwards compatibility, triggerType is the highest priority signal
+      const triggerType = activeSignals[0] || '20MA';
 
       return {
         ticker: row.ticker as string,
@@ -405,17 +413,25 @@ async function selectTickers(
           ma250: (row.ma_250_signal as string) || 'NONE',
         },
         triggerType,
+        activeSignals, // New field with all active signals
       };
     });
 
     const russellTickers: SelectedTicker[] = russellResult.rows.map(row => {
-      // Determine trigger type based on signals (prioritize 250 > 60 > 20)
-      let triggerType: '20MA' | '60MA' | '250MA' = '20MA';
+      // Collect ALL active signals (not just highest priority)
+      const activeSignals: ('20MA' | '60MA' | '250MA')[] = [];
       if (row.ma_250_signal && row.ma_250_signal !== 'NONE') {
-        triggerType = '250MA';
-      } else if (row.ma_60_signal && row.ma_60_signal !== 'NONE') {
-        triggerType = '60MA';
+        activeSignals.push('250MA');
       }
+      if (row.ma_60_signal && row.ma_60_signal !== 'NONE') {
+        activeSignals.push('60MA');
+      }
+      if (row.ma_20_signal && row.ma_20_signal !== 'NONE') {
+        activeSignals.push('20MA');
+      }
+
+      // For backwards compatibility, triggerType is the highest priority signal
+      const triggerType = activeSignals[0] || '20MA';
 
       return {
         ticker: row.ticker as string,
@@ -430,6 +446,7 @@ async function selectTickers(
           ma250: (row.ma_250_signal as string) || 'NONE',
         },
         triggerType,
+        activeSignals, // New field with all active signals
       };
     });
 
