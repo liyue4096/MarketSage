@@ -12,7 +12,8 @@ import {
   Info,
   Menu,
   X,
-  Github
+  Github,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,15 +59,36 @@ export default function NavBar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      {/* Risk Disclosure Banner */}
+      <div className="bg-amber-50 border-b border-amber-200">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
+          <div className="flex items-center justify-center gap-2 text-xs text-amber-900">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="font-medium">Risk Disclosure:</span>
+            <span className="hidden sm:inline">
+              AI-generated reports may contain inaccuracies. Not financial advice. Validate all data before trading.
+            </span>
+            <span className="sm:hidden">
+              AI-generated. Not financial advice.
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo & Brand */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <BarChart3 className="w-7 h-7 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">
-                Market<span className="text-blue-600">Sage</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-gray-900 leading-none">
+                  Market<span className="text-blue-600">Sage</span>
+                </span>
+                <span className="text-[10px] text-gray-500 italic leading-tight hidden sm:block">
+                  Vision by AI. Value by you.
+                </span>
+              </div>
             </Link>
           </div>
 

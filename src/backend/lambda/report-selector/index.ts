@@ -39,8 +39,7 @@ interface QueryResult<T = Record<string, unknown>> {
 }
 
 function convertPositionalToNamed(sql: string): string {
-  let index = 0;
-  return sql.replace(/\$(\d+)/g, () => `:p${index++}`);
+  return sql.replace(/\$(\d+)/g, (_match, num) => `:p${parseInt(num) - 1}`);
 }
 
 // Check if string looks like a date (YYYY-MM-DD format)
@@ -67,10 +66,10 @@ function toSqlParameter(value: unknown, index: number): { name: string; value: F
 
 function fromField(field: Field): unknown {
   if (field.isNull) return null;
-  if (field.stringValue !== undefined) return field.stringValue;
-  if (field.longValue !== undefined) return Number(field.longValue);
-  if (field.doubleValue !== undefined) return field.doubleValue;
-  if (field.booleanValue !== undefined) return field.booleanValue;
+  if ((field as any).stringValue !== undefined) return (field as any).stringValue;
+  if ((field as any).longValue !== undefined) return Number((field as any).longValue);
+  if ((field as any).doubleValue !== undefined) return (field as any).doubleValue;
+  if ((field as any).booleanValue !== undefined) return (field as any).booleanValue;
   return null;
 }
 
@@ -471,6 +470,41 @@ async function selectTickers(
   }
 }
 
+// Database warm-up function
+// Aurora Serverless v2 with minCapacity=0 can pause when idle
+// This function wakes up the database before running main queries
+async function warmupDatabase(pool: DataApiPool): Promise<void> {
+  const maxRetries = 3;
+  const baseDelay = 5000; // 5 seconds
+
+  console.log('[ReportSelector] Warming up database (Aurora may be paused)...');
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const client = await pool.connect();
+      try {
+        const startTime = Date.now();
+        await client.query('SELECT 1 as warmup');
+        const duration = Date.now() - startTime;
+        console.log(`[ReportSelector] Database warm-up successful (took ${duration}ms)`);
+        return;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries;
+      if (isLastAttempt) {
+        console.error('[ReportSelector] Database warm-up failed after all retries:', error);
+        throw error;
+      }
+
+      const delay = baseDelay * attempt; // Exponential backoff: 5s, 10s, 15s
+      console.log(`[ReportSelector] Warm-up attempt ${attempt} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 // Lambda handler
 type Handler<TEvent = any, TResult = any> = (event: TEvent, context: any) => Promise<TResult>;
 
@@ -507,6 +541,9 @@ export const handler: Handler<ReportSelectorEvent, ReportSelectorResult> = async
 
       // Step 2: Connect to database
       pool = await getDbPool();
+
+      // Step 2.5: Warm up database (Aurora Serverless v2 may be paused)
+      await warmupDatabase(pool);
 
       // Step 3: Select tickers
       const { nasdaq, russell, stats } = await selectTickers(
