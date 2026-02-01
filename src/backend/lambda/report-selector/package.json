@@ -17,5 +17,8 @@
     "@types/node": "^25.0.10",
     "@types/pg": "^8.16.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-rds-data": "^3.980.0"
   }
 }

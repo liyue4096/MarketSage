@@ -22,9 +22,12 @@ export class MarketsageInfraStack extends cdk.Stack {
     // ========================================
     // VPC Configuration
     // ========================================
+    // VPC retained for Aurora - Lambdas don't use VPC (they use RDS Data API via HTTPS)
+    // NOTE: After deployment, manually delete NAT Gateway in AWS Console to save ~$7.56/week
+    // The NAT Gateway is no longer needed since Lambdas use RDS Data API instead of VPC
     const vpc = new ec2.Vpc(this, 'MarketsageVpc', {
       maxAzs: 2,
-      natGateways: 1,
+      natGateways: 1, // Keep for now - delete manually in AWS Console after deployment
       subnetConfiguration: [
         {
           cidrMask: 24,
@@ -138,27 +141,27 @@ export class MarketsageInfraStack extends cdk.Stack {
     // ========================================
 
     // Common Lambda environment variables
+    // Using RDS Data API instead of direct TCP connection (no VPC needed)
     const commonEnv = {
       DB_SECRET_ARN: dbCredentials.secretArn,
-      DB_CLUSTER_ENDPOINT: auroraCluster.clusterEndpoint.hostname,
+      DB_CLUSTER_ARN: auroraCluster.clusterArn,
+      DB_CLUSTER_ENDPOINT: auroraCluster.clusterEndpoint.hostname, // Keep for reference
       DB_NAME: 'marketsage',
       NODE_OPTIONS: '--enable-source-maps',
     };
 
     // Technical Scanner Lambda - Identifies MA breakthroughs
+    // NO VPC - uses RDS Data API via HTTPS (saves $7.56/week NAT Gateway cost)
     const technicalScannerLambda = new lambda.Function(this, 'TechnicalScannerLambda', {
       functionName: 'marketsage-technical-scanner',
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/technical-scanner')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(5),
       memorySize: 256,
       environment: {
         ...commonEnv,
-        FINANCIAL_API_KEY_SECRET: 'marketsage/api/polygon', // Store API key in Secrets Manager
+        FINANCIAL_API_KEY_SECRET: 'marketsage/api/polygon',
       },
       layers: [lambdaLayer],
     });
@@ -169,9 +172,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/bull-agent')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
       environment: {
@@ -188,9 +188,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/bear-agent')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
       environment: {
@@ -207,9 +204,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/rebuttal-agent')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
       environment: {
@@ -225,9 +219,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/judge-agent')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
       environment: {
@@ -243,9 +234,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/translate-agent')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(5),
       memorySize: 512,
       environment: {
@@ -261,9 +249,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/report-persister')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(2),
       memorySize: 256,
       environment: commonEnv,
@@ -276,9 +261,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/retro-exam')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
       environment: {
@@ -295,9 +277,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/api-handler')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
       environment: {
@@ -316,9 +295,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/data-loader')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(15),
       memorySize: 2048,
       environment: {
@@ -334,9 +310,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/signal-generator')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
       environment: commonEnv,
@@ -349,9 +322,6 @@ export class MarketsageInfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/report-selector')),
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [lambdaSecurityGroup],
       timeout: cdk.Duration.minutes(5),
       memorySize: 256,
       environment: {
@@ -397,9 +367,20 @@ export class MarketsageInfraStack extends cdk.Stack {
       reportSelectorLambda,
     ];
 
+    // Grant permissions for RDS Data API access (HTTPS-based, no VPC needed)
     allLambdas.forEach((fn) => {
       dbCredentials.grantRead(fn);
-      auroraCluster.grantConnect(fn, 'marketsage_admin');
+      // RDS Data API permissions (replaces VPC-based TCP connection)
+      fn.addToRolePolicy(new iam.PolicyStatement({
+        actions: [
+          'rds-data:ExecuteStatement',
+          'rds-data:BatchExecuteStatement',
+          'rds-data:BeginTransaction',
+          'rds-data:CommitTransaction',
+          'rds-data:RollbackTransaction',
+        ],
+        resources: [auroraCluster.clusterArn],
+      }));
     });
 
     // Grant specific Lambdas access to additional secrets

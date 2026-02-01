@@ -13,7 +13,155 @@
  */
 
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
-import { Pool } from 'pg';
+// Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
+import {
+  RDSDataClient,
+  ExecuteStatementCommand,
+  BeginTransactionCommand,
+  CommitTransactionCommand,
+  RollbackTransactionCommand,
+  Field,
+  TypeHint,
+} from '@aws-sdk/client-rds-data';
+
+// ============================================
+// RDS Data API Compatibility Layer
+// ============================================
+
+interface QueryResult<T = Record<string, unknown>> {
+  rows: T[];
+  rowCount: number;
+}
+
+function convertPositionalToNamed(sql: string): string {
+  let index = 0;
+  return sql.replace(/\$(\d+)/g, () => `:p${index++}`);
+}
+
+// Check if string looks like a date (YYYY-MM-DD format)
+function isDateString(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function toSqlParameter(value: unknown, index: number): { name: string; value: Field; typeHint?: TypeHint } {
+  const name = `p${index}`;
+  if (value === null || value === undefined) return { name, value: { isNull: true } };
+  if (typeof value === 'string') {
+    if (isDateString(value)) {
+      return { name, value: { stringValue: value }, typeHint: 'DATE' };
+    }
+    return { name, value: { stringValue: value } };
+  }
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? { name, value: { longValue: value } } : { name, value: { doubleValue: value } };
+  }
+  if (typeof value === 'boolean') return { name, value: { booleanValue: value } };
+  if (Array.isArray(value)) return { name, value: { stringValue: `{${value.join(',')}}` } };
+  return { name, value: { stringValue: String(value) } };
+}
+
+function fromField(field: Field): unknown {
+  if (field.isNull) return null;
+  if (field.stringValue !== undefined) return field.stringValue;
+  if (field.longValue !== undefined) return Number(field.longValue);
+  if (field.doubleValue !== undefined) return field.doubleValue;
+  if (field.booleanValue !== undefined) return field.booleanValue;
+  return null;
+}
+
+class DataApiClient {
+  private transactionId: string | null = null;
+  private rdsClient: RDSDataClient;
+  private resourceArn: string;
+  private secretArn: string;
+  private database: string;
+
+  constructor(rdsClient: RDSDataClient, resourceArn: string, secretArn: string, database: string) {
+    this.rdsClient = rdsClient;
+    this.resourceArn = resourceArn;
+    this.secretArn = secretArn;
+    this.database = database;
+  }
+
+  async query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<QueryResult<T>> {
+    const trimmedSql = sql.trim().toUpperCase();
+
+    if (trimmedSql === 'BEGIN' || trimmedSql.startsWith('BEGIN')) {
+      const response = await this.rdsClient.send(new BeginTransactionCommand({
+        resourceArn: this.resourceArn, secretArn: this.secretArn, database: this.database,
+      }));
+      this.transactionId = response.transactionId || null;
+      return { rows: [], rowCount: 0 };
+    }
+
+    if (trimmedSql === 'COMMIT' || trimmedSql.startsWith('COMMIT')) {
+      if (this.transactionId) {
+        await this.rdsClient.send(new CommitTransactionCommand({
+          resourceArn: this.resourceArn, secretArn: this.secretArn, transactionId: this.transactionId,
+        }));
+        this.transactionId = null;
+      }
+      return { rows: [], rowCount: 0 };
+    }
+
+    if (trimmedSql === 'ROLLBACK' || trimmedSql.startsWith('ROLLBACK')) {
+      if (this.transactionId) {
+        await this.rdsClient.send(new RollbackTransactionCommand({
+          resourceArn: this.resourceArn, secretArn: this.secretArn, transactionId: this.transactionId,
+        }));
+        this.transactionId = null;
+      }
+      return { rows: [], rowCount: 0 };
+    }
+
+    const convertedSql = convertPositionalToNamed(sql);
+    const sqlParams = params?.map((value, index) => toSqlParameter(value, index));
+
+    const response = await this.rdsClient.send(new ExecuteStatementCommand({
+      resourceArn: this.resourceArn, secretArn: this.secretArn, database: this.database,
+      sql: convertedSql, parameters: sqlParams, includeResultMetadata: true,
+      transactionId: this.transactionId || undefined,
+    }));
+
+    const columnNames = response.columnMetadata?.map((col: { name?: string }) => col.name || '') || [];
+    const rows: T[] = (response.records || []).map((record: Field[]) => {
+      const row: Record<string, unknown> = {};
+      record.forEach((field: Field, index: number) => {
+        row[columnNames[index] || `col${index}`] = fromField(field);
+      });
+      return row as T;
+    });
+
+    return { rows, rowCount: response.numberOfRecordsUpdated ?? rows.length };
+  }
+
+  release(): void {}
+}
+
+class DataApiPool {
+  private rdsClient: RDSDataClient;
+  private resourceArn: string;
+  private secretArn: string;
+  private database: string;
+
+  constructor(resourceArn: string, secretArn: string, database: string) {
+    this.rdsClient = new RDSDataClient({ region: process.env.AWS_REGION || 'us-west-2' });
+    this.resourceArn = resourceArn;
+    this.secretArn = secretArn;
+    this.database = database;
+  }
+
+  async query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<QueryResult<T>> {
+    const client = new DataApiClient(this.rdsClient, this.resourceArn, this.secretArn, this.database);
+    return client.query<T>(sql, params);
+  }
+
+  async connect(): Promise<DataApiClient> {
+    return new DataApiClient(this.rdsClient, this.resourceArn, this.secretArn, this.database);
+  }
+
+  async end(): Promise<void> {}
+}
 
 // Types
 type SignalType = 'CROSS_ABOVE' | 'CROSS_BELOW' | 'NONE';
@@ -109,22 +257,12 @@ async function getSecret(secretName: string): Promise<string> {
   return response.SecretString || '';
 }
 
-// Get database pool
-async function getDbPool(): Promise<Pool> {
-  const secretName = process.env.DB_SECRET_ARN || 'marketsage/aurora/credentials';
-  const secretStr = await getSecret(secretName);
-  const secret = JSON.parse(secretStr);
-
-  return new Pool({
-    host: secret.host || process.env.DB_CLUSTER_ENDPOINT,
-    port: secret.port || 5432,
-    database: secret.dbname || process.env.DB_NAME || 'marketsage',
-    user: secret.username,
-    password: secret.password,
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 30000,  // 30s to handle Aurora Serverless cold starts
-  });
+// Get database pool using RDS Data API (no VPC/NAT Gateway needed)
+function getDbPool(): DataApiPool {
+  const resourceArn = process.env.DB_CLUSTER_ARN!;
+  const secretArn = process.env.DB_SECRET_ARN!;
+  const database = process.env.DB_NAME || 'marketsage';
+  return new DataApiPool(resourceArn, secretArn, database);
 }
 
 // Get current trading day (today in ET)
@@ -140,7 +278,7 @@ function getCurrentTradingDay(): string {
 }
 
 // Run migrations
-async function runMigrations(pool: Pool): Promise<void> {
+async function runMigrations(pool: DataApiPool): Promise<void> {
   console.log('[SignalGenerator] Running migrations...');
   const client = await pool.connect();
   try {
@@ -152,7 +290,7 @@ async function runMigrations(pool: Pool): Promise<void> {
 }
 
 // Generate signals for Russell 1000 tickers with price increase and MA crossovers
-async function generateSignals(pool: Pool, tradeDate: string): Promise<SignalGeneratorResult> {
+async function generateSignals(pool: DataApiPool, tradeDate: string): Promise<SignalGeneratorResult> {
   console.log(`[SignalGenerator] Generating signals for ${tradeDate}...`);
 
   const client = await pool.connect();
@@ -325,7 +463,7 @@ async function generateSignals(pool: Pool, tradeDate: string): Promise<SignalGen
 }
 
 // Query signals from database
-async function querySignals(pool: Pool, signalDate: string, ticker?: string): Promise<SignalGeneratorResult> {
+async function querySignals(pool: DataApiPool, signalDate: string, ticker?: string): Promise<SignalGeneratorResult> {
   const client = await pool.connect();
 
   try {
@@ -395,7 +533,7 @@ export const handler: Handler<SignalGeneratorEvent, SignalGeneratorResult> = asy
 
   console.log(`[SignalGenerator] Starting with action: ${action}, tradeDate: ${tradeDate}`);
 
-  let pool: Pool | null = null;
+  let pool: DataApiPool | null = null;
 
   try {
     pool = await getDbPool();

@@ -2,7 +2,95 @@ import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
-import { Pool } from 'pg';
+// Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
+import {
+  RDSDataClient,
+  ExecuteStatementCommand,
+  Field,
+  TypeHint,
+} from '@aws-sdk/client-rds-data';
+
+// ============================================
+// RDS Data API Compatibility Layer
+// ============================================
+
+interface QueryResult<T = Record<string, unknown>> {
+  rows: T[];
+  rowCount: number;
+}
+
+function convertPositionalToNamed(sql: string): string {
+  let index = 0;
+  return sql.replace(/\$(\d+)/g, () => `:p${index++}`);
+}
+
+// Check if string looks like a date (YYYY-MM-DD format)
+function isDateString(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function toSqlParameter(value: unknown, index: number): { name: string; value: Field; typeHint?: TypeHint } {
+  const name = `p${index}`;
+  if (value === null || value === undefined) return { name, value: { isNull: true } };
+  if (typeof value === 'string') {
+    if (isDateString(value)) {
+      return { name, value: { stringValue: value }, typeHint: 'DATE' };
+    }
+    return { name, value: { stringValue: value } };
+  }
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? { name, value: { longValue: value } } : { name, value: { doubleValue: value } };
+  }
+  if (typeof value === 'boolean') return { name, value: { booleanValue: value } };
+  if (Array.isArray(value)) return { name, value: { stringValue: `{${value.join(',')}}` } };
+  return { name, value: { stringValue: String(value) } };
+}
+
+function fromField(field: Field): unknown {
+  if (field.isNull) return null;
+  if (field.stringValue !== undefined) return field.stringValue;
+  if (field.longValue !== undefined) return Number(field.longValue);
+  if (field.doubleValue !== undefined) return field.doubleValue;
+  if (field.booleanValue !== undefined) return field.booleanValue;
+  return null;
+}
+
+class DataApiPool {
+  private rdsClient: RDSDataClient;
+  private resourceArn: string;
+  private secretArn: string;
+  private database: string;
+
+  constructor(resourceArn: string, secretArn: string, database: string) {
+    this.rdsClient = new RDSDataClient({ region: process.env.AWS_REGION || 'us-west-2' });
+    this.resourceArn = resourceArn;
+    this.secretArn = secretArn;
+    this.database = database;
+  }
+
+  async query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<QueryResult<T>> {
+    const convertedSql = convertPositionalToNamed(sql);
+    const sqlParams = params?.map((value, index) => toSqlParameter(value, index));
+
+    const response = await this.rdsClient.send(new ExecuteStatementCommand({
+      resourceArn: this.resourceArn, secretArn: this.secretArn, database: this.database,
+      sql: convertedSql, parameters: sqlParams, includeResultMetadata: true,
+    }));
+
+    const columnNames = response.columnMetadata?.map((col: { name?: string }) => col.name || '') || [];
+    const rows: T[] = (response.records || []).map((record: Field[]) => {
+      const row: Record<string, unknown> = {};
+      record.forEach((field: Field, index: number) => {
+        row[columnNames[index] || `col${index}`] = fromField(field);
+      });
+      return row as T;
+    });
+
+    return { rows, rowCount: response.numberOfRecordsUpdated ?? rows.length };
+  }
+
+  async end(): Promise<void> {}
+}
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -10,30 +98,19 @@ const secretsClient = new SecretsManagerClient({});
 
 const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
 
-// PostgreSQL pool (lazy initialized)
-let pgPool: Pool | null = null;
+// RDS Data API pool (lazy initialized)
+let dbPool: DataApiPool | null = null;
 
-// Get PostgreSQL connection pool
-async function getDbPool(): Promise<Pool> {
-  if (pgPool) return pgPool;
+// Get database pool using RDS Data API (no VPC/NAT Gateway needed)
+function getDbPool(): DataApiPool {
+  if (dbPool) return dbPool;
 
-  const secretName = process.env.DB_SECRET_ARN || 'marketsage/aurora/credentials';
-  const command = new GetSecretValueCommand({ SecretId: secretName });
-  const response = await secretsClient.send(command);
-  const secret = JSON.parse(response.SecretString || '{}');
+  const resourceArn = process.env.DB_CLUSTER_ARN!;
+  const secretArn = process.env.DB_SECRET_ARN!;
+  const database = process.env.DB_NAME || 'marketsage';
 
-  pgPool = new Pool({
-    host: secret.host || process.env.DB_CLUSTER_ENDPOINT,
-    port: secret.port || 5432,
-    database: secret.dbname || process.env.DB_NAME || 'marketsage',
-    user: secret.username,
-    password: secret.password,
-    max: 5,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 30000,
-  });
-
-  return pgPool;
+  dbPool = new DataApiPool(resourceArn, secretArn, database);
+  return dbPool;
 }
 
 // Signal types for API response
