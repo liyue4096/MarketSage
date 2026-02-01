@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Filter,
   ArrowUpDown,
+  Activity,
 } from 'lucide-react';
 import { MASignal, SignalDirection } from '@/types';
 import { fetchSignalDates, fetchSignalsByDate } from '@/lib/api';
