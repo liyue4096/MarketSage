@@ -116,7 +116,7 @@ export default function NavBar() {
 
             {/* About / GitHub Link */}
             <a
-              href="https://github.com/leonbay/MarketSage"
+              href="https://github.com/liyue4096/MarketSage"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600

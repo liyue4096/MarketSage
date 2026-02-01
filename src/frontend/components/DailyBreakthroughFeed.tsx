@@ -42,10 +42,10 @@ export default function DailyBreakthroughFeed({
     <div className="w-80 border-r border-gray-200 bg-gray-50 h-screen overflow-hidden flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-2 mb-4">
+        {/* <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-6 h-6 text-blue-600" />
           <h1 className="text-xl font-bold text-gray-900">MarketSage</h1>
-        </div>
+        </div> */}
 
         {/* Date Picker */}
         <div className="space-y-2">
