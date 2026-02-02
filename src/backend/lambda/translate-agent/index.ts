@@ -199,8 +199,13 @@ Respond with ONLY valid JSON. No text before or after.
   }` : ''}
 }`;
 
+  console.log(`[TranslateAgent] Prompt includes opening arguments: ${openingArgumentsSection.length > 0}`);
+  console.log(`[TranslateAgent] Prompt includes cross-examination: ${crossExaminationSection.length > 0}`);
+  console.log(`[TranslateAgent] Prompt length: ${prompt.length} characters`);
+
   try {
-    const { text } = await gemini.generate(prompt, systemInstruction);
+    const { text } = await gemini.generateThinking(prompt, systemInstruction);
+    console.log(`[TranslateAgent] Gemini response length: ${text.length} characters`);
 
     // Extract JSON from response
     let cleanJson = text.replace(/```json\n?|\n?```/g, '').trim();
@@ -211,6 +216,10 @@ Respond with ONLY valid JSON. No text before or after.
     const parsed = JSON.parse(cleanJson);
 
     console.log(`[TranslateAgent] Translation completed for ${ticker}`);
+    console.log(`[TranslateAgent] Parsed response keys:`, Object.keys(parsed));
+    console.log(`[TranslateAgent] Has bullOpeningChinese:`, !!parsed.bullOpeningChinese);
+    console.log(`[TranslateAgent] Has bearOpeningChinese:`, !!parsed.bearOpeningChinese);
+    console.log(`[TranslateAgent] Has rebuttalsChinese:`, !!parsed.rebuttalsChinese);
 
     return {
       ticker,

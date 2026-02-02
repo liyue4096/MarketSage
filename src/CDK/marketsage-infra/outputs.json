@@ -1,0 +1,10 @@
+{
+  "MarketsageInfraStack": {
+    "ApiUrl": "https://ojn2366vej.execute-api.us-west-2.amazonaws.com/prod/",
+    "MarketsageApiEndpoint76346738": "https://ojn2366vej.execute-api.us-west-2.amazonaws.com/prod/",
+    "AuroraClusterEndpoint": "marketsageinfrastack-auroracluster23d869c0-3xlzrsmbpzv8.cluster-clmw0oes0adw.us-west-2.rds.amazonaws.com",
+    "StepFunctionArn": "arn:aws:states:us-west-2:134051052174:stateMachine:marketsage-adversarial-analysis",
+    "AmplifyAppId": "d3adl2sux3cea7",
+    "AnalysisTableName": "marketsage-analysis"
+  }
+}
