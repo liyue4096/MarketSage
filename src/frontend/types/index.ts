@@ -35,6 +35,9 @@ export interface StockReport {
   // Chinese translations
   reportContentChinese?: string;
   consensusSummaryChinese?: string[];
+  bullThesisChinese?: DebatePoint[];
+  bearThesisChinese?: DebatePoint[];
+  rebuttalsChinese?: Rebuttals;
   appendix: string;
   thoughtSignature: string;
 }

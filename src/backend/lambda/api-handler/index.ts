@@ -184,6 +184,10 @@ interface DynamoAnalysisRecord {
   rebuttals?: DynamoRebuttals;
   bullDefense?: DynamoThesis;
   bearDefense?: DynamoThesis;
+  // Chinese translations for Opening Arguments and Cross-Examination
+  bullOpeningChinese?: DynamoThesis;
+  bearOpeningChinese?: DynamoThesis;
+  rebuttalsChinese?: DynamoRebuttals;
   peers?: Array<{
     ticker: string;
     companyName: string;
@@ -249,6 +253,9 @@ interface StockReport {
   // Chinese translations
   reportContentChinese?: string;
   consensusSummaryChinese?: string[];
+  bullThesisChinese?: DebatePoint[];
+  bearThesisChinese?: DebatePoint[];
+  rebuttalsChinese?: Rebuttals;
   appendix: string;
   thoughtSignature: string;
 }
@@ -363,6 +370,9 @@ function transformToStockReport(record: DynamoAnalysisRecord): StockReport {
     // Chinese translations
     reportContentChinese: record.reportContentChinese,
     consensusSummaryChinese: record.consensusSummaryChinese,
+    bullThesisChinese: record.bullOpeningChinese ? transformThesis(record.bullOpeningChinese) : undefined,
+    bearThesisChinese: record.bearOpeningChinese ? transformThesis(record.bearOpeningChinese) : undefined,
+    rebuttalsChinese: record.rebuttalsChinese ? transformRebuttals(record.rebuttalsChinese) : undefined,
     appendix: buildAppendix(record.bullOpening, record.bearOpening),
     thoughtSignature: record.thoughtSignature,
   };

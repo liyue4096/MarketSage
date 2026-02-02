@@ -537,7 +537,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       backoffRate: 2,
     });
 
-    // Step 6: Translate report to Chinese
+    // Step 6: Translate report to Chinese (including Opening Arguments and Cross-Examination)
     const translateTask = new tasks.LambdaInvoke(this, 'TranslateReport', {
       lambdaFunction: translateAgentLambda,
       payload: stepfunctions.TaskInput.fromObject({
@@ -545,6 +545,9 @@ export class MarketsageInfraStack extends cdk.Stack {
         'triggerDate.$': '$.scanDate',
         'reportContent.$': '$.verdict.reportContent',
         'consensusSummary.$': '$.verdict.consensusSummary',
+        'bullOpening.$': '$.bullThesis',
+        'bearOpening.$': '$.bearThesis',
+        'rebuttals.$': '$.rebuttals',
       }),
       payloadResponseOnly: true,
       resultPath: '$.translation',
@@ -559,7 +562,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       backoffRate: 2,
     });
 
-    // Step 7: Update stored analysis with Chinese translation
+    // Step 7: Update stored analysis with Chinese translation (including Opening Arguments and Cross-Examination)
     const updateTranslationTask = new tasks.LambdaInvoke(this, 'UpdateTranslation', {
       lambdaFunction: analysisStoreLambda,
       payload: stepfunctions.TaskInput.fromObject({
@@ -575,6 +578,9 @@ export class MarketsageInfraStack extends cdk.Stack {
         'judge.$': '$.verdict',
         'reportContentChinese.$': '$.translation.reportContentChinese',
         'consensusSummaryChinese.$': '$.translation.consensusSummaryChinese',
+        'bullOpeningChinese.$': '$.translation.bullOpeningChinese',
+        'bearOpeningChinese.$': '$.translation.bearOpeningChinese',
+        'rebuttalsChinese.$': '$.translation.rebuttalsChinese',
       }),
       payloadResponseOnly: true,
       retryOnServiceExceptions: true,

@@ -77,6 +77,9 @@ interface StoreAnalysisEvent {
   // For Chinese translation (optional, added after initial store)
   reportContentChinese?: string;
   consensusSummaryChinese?: string[];
+  bullOpeningChinese?: AgentOutput;
+  bearOpeningChinese?: AgentOutput;
+  rebuttalsChinese?: RebuttalOutput;
   // For query-analysis (by ticker)
   ticker?: string;
   // For query-by-signature
@@ -115,7 +118,8 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
   const {
     triggerDate, triggerType, closePrice, peers, companyName,
     bullOpening, bearOpening, rebuttals, bullDefense, bearDefense, judge,
-    reportContentChinese, consensusSummaryChinese
+    reportContentChinese, consensusSummaryChinese,
+    bullOpeningChinese, bearOpeningChinese, rebuttalsChinese
   } = event;
 
   if (!judge || !bullOpening || !bearOpening) {
@@ -176,6 +180,19 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
       thinkingTrace: bearOpening.thinkingTrace,
       timestamp: bearOpening.timestamp
     },
+    // Chinese translations for Opening Arguments
+    bullOpeningChinese: bullOpeningChinese ? {
+      thesis: bullOpeningChinese.thesis,
+      primaryCatalyst: bullOpeningChinese.primaryCatalyst,
+      thinkingTrace: bullOpeningChinese.thinkingTrace,
+      timestamp: bullOpeningChinese.timestamp
+    } : null,
+    bearOpeningChinese: bearOpeningChinese ? {
+      thesis: bearOpeningChinese.thesis,
+      primaryRisk: bearOpeningChinese.primaryRisk,
+      thinkingTrace: bearOpeningChinese.thinkingTrace,
+      timestamp: bearOpeningChinese.timestamp
+    } : null,
 
     // Round 2: Rebuttals
     rebuttals: rebuttals ? {
@@ -183,6 +200,13 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
       bearRebuttals: rebuttals.bearRebuttals,
       thinkingTrace: rebuttals.thinkingTrace,
       timestamp: rebuttals.timestamp
+    } : null,
+    // Chinese translations for Rebuttals
+    rebuttalsChinese: rebuttalsChinese ? {
+      bullRebuttals: rebuttalsChinese.bullRebuttals,
+      bearRebuttals: rebuttalsChinese.bearRebuttals,
+      thinkingTrace: rebuttalsChinese.thinkingTrace,
+      timestamp: rebuttalsChinese.timestamp
     } : null,
 
     // Round 3: Final Defense
