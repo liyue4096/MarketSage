@@ -812,6 +812,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         stageName: 'prod',
         throttlingBurstLimit: 100,
         throttlingRateLimit: 50,
+        cachingEnabled: false, // Disable caching - cache key doesn't include path params
       },
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,

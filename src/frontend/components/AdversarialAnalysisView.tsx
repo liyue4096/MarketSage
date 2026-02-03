@@ -18,8 +18,12 @@ interface AdversarialAnalysisViewProps {
 export default function AdversarialAnalysisView({ report }: AdversarialAnalysisViewProps) {
   const [language, setLanguage] = useState<Language>('en');
 
-  // Check if Chinese translation is available
-  const hasChineseTranslation = report?.reportContentChinese && report?.consensusSummaryChinese;
+  // Check if Chinese translation is available (any of the Chinese fields)
+  const hasChineseTranslation = report?.reportContentChinese ||
+    report?.consensusSummaryChinese ||
+    report?.bullThesisChinese?.length ||
+    report?.bearThesisChinese?.length ||
+    report?.rebuttalsChinese;
 
   if (!report) {
     return (
@@ -80,6 +84,10 @@ export default function AdversarialAnalysisView({ report }: AdversarialAnalysisV
           rebuttals={report.rebuttals}
           bullDefense={report.bullDefense}
           bearDefense={report.bearDefense}
+          bullThesisChinese={report.bullThesisChinese}
+          bearThesisChinese={report.bearThesisChinese}
+          rebuttalsChinese={report.rebuttalsChinese}
+          language={language}
         />
 
         {/* Consensus Summary */}

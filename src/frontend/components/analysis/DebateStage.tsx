@@ -6,12 +6,19 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, ExternalLink, Swords, Shield, Scale } from 'lucide-react';
 
+type Language = 'en' | 'zh';
+
 interface DebateStageProps {
   bullThesis: DebatePoint[];
   bearThesis: DebatePoint[];
   rebuttals?: Rebuttals;
   bullDefense?: DebatePoint[];
   bearDefense?: DebatePoint[];
+  // Chinese translations
+  bullThesisChinese?: DebatePoint[];
+  bearThesisChinese?: DebatePoint[];
+  rebuttalsChinese?: Rebuttals;
+  language?: Language;
 }
 
 interface ThesisCardProps {
@@ -237,9 +244,57 @@ function ThesisCard({ title, icon, thesis, colorScheme }: ThesisCardProps) {
   );
 }
 
-export default function DebateStage({ bullThesis, bearThesis, rebuttals, bullDefense, bearDefense }: DebateStageProps) {
-  const hasRebuttals = rebuttals && (rebuttals.bullRebuttals?.length > 0 || rebuttals.bearRebuttals?.length > 0);
+export default function DebateStage({
+  bullThesis,
+  bearThesis,
+  rebuttals,
+  bullDefense,
+  bearDefense,
+  bullThesisChinese,
+  bearThesisChinese,
+  rebuttalsChinese,
+  language = 'en'
+}: DebateStageProps) {
+  // Use Chinese translations if available and language is Chinese
+  const displayBullThesis = language === 'zh' && bullThesisChinese?.length ? bullThesisChinese : bullThesis;
+  const displayBearThesis = language === 'zh' && bearThesisChinese?.length ? bearThesisChinese : bearThesis;
+  const displayRebuttals = language === 'zh' && rebuttalsChinese ? rebuttalsChinese : rebuttals;
+
+  const hasRebuttals = displayRebuttals && (displayRebuttals.bullRebuttals?.length > 0 || displayRebuttals.bearRebuttals?.length > 0);
   const hasDefense = (bullDefense && bullDefense.length > 0) || (bearDefense && bearDefense.length > 0);
+
+  // Labels for both languages
+  const labels = {
+    en: {
+      round1: 'Round 1: Opening Arguments',
+      round1Desc: 'Multi-agent analysis with independent bull and bear perspectives',
+      round2: 'Round 2: Cross-Examination',
+      round2Desc: 'Each side challenges the opponent\'s arguments with counter-evidence',
+      round3: 'Round 3: Final Defense',
+      round3Desc: 'Each side strengthens their position after considering rebuttals',
+      bullThesis: 'Bull Thesis',
+      bearThesis: 'Bear Thesis',
+      bullChallenges: 'Bull Challenges Bear',
+      bearChallenges: 'Bear Challenges Bull',
+      bullDefense: 'Bull Defense',
+      bearDefense: 'Bear Defense',
+    },
+    zh: {
+      round1: '第一轮：开场辩论',
+      round1Desc: '多智能体分析，独立呈现多头和空头观点',
+      round2: '第二轮：交叉质询',
+      round2Desc: '双方以反证挑战对方论点',
+      round3: '第三轮：最终辩护',
+      round3Desc: '双方在考虑反驳后加强自己的立场',
+      bullThesis: '多头论点',
+      bearThesis: '空头论点',
+      bullChallenges: '多头挑战空头',
+      bearChallenges: '空头挑战多头',
+      bullDefense: '多头辩护',
+      bearDefense: '空头辩护',
+    }
+  };
+  const t = labels[language];
 
   return (
     <div className="space-y-6">
@@ -248,27 +303,27 @@ export default function DebateStage({ bullThesis, bearThesis, rebuttals, bullDef
         <CardHeader>
           <div className="flex items-center gap-2">
             <Scale className="w-5 h-5 text-blue-600" />
-            <CardTitle>Round 1: Opening Arguments</CardTitle>
+            <CardTitle>{t.round1}</CardTitle>
           </div>
           <p className="text-sm text-gray-600">
-            Multi-agent analysis with independent bull and bear perspectives
+            {t.round1Desc}
           </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bull Thesis */}
             <ThesisCard
-              title="Bull Thesis"
+              title={t.bullThesis}
               icon={<TrendingUp className="w-5 h-5" />}
-              thesis={bullThesis}
+              thesis={displayBullThesis}
               colorScheme="green"
             />
 
             {/* Bear Thesis */}
             <ThesisCard
-              title="Bear Thesis"
+              title={t.bearThesis}
               icon={<TrendingDown className="w-5 h-5" />}
-              thesis={bearThesis}
+              thesis={displayBearThesis}
               colorScheme="red"
             />
           </div>
@@ -276,30 +331,30 @@ export default function DebateStage({ bullThesis, bearThesis, rebuttals, bullDef
       </Card>
 
       {/* Round 2: Rebuttals */}
-      {hasRebuttals && (
+      {hasRebuttals && displayRebuttals && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Swords className="w-5 h-5 text-orange-600" />
-              <CardTitle>Round 2: Cross-Examination</CardTitle>
+              <CardTitle>{t.round2}</CardTitle>
             </div>
             <p className="text-sm text-gray-600">
-              Each side challenges the opponent's arguments with counter-evidence
+              {t.round2Desc}
             </p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Bull's rebuttals against Bear */}
               <RebuttalCard
-                title="Bull Challenges Bear"
-                rebuttals={rebuttals.bullRebuttals || []}
+                title={t.bullChallenges}
+                rebuttals={displayRebuttals.bullRebuttals || []}
                 colorScheme="green"
               />
 
               {/* Bear's rebuttals against Bull */}
               <RebuttalCard
-                title="Bear Challenges Bull"
-                rebuttals={rebuttals.bearRebuttals || []}
+                title={t.bearChallenges}
+                rebuttals={displayRebuttals.bearRebuttals || []}
                 colorScheme="red"
               />
             </div>
@@ -313,10 +368,10 @@ export default function DebateStage({ bullThesis, bearThesis, rebuttals, bullDef
           <CardHeader>
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-purple-600" />
-              <CardTitle>Round 3: Final Defense</CardTitle>
+              <CardTitle>{t.round3}</CardTitle>
             </div>
             <p className="text-sm text-gray-600">
-              Each side strengthens their position after considering rebuttals
+              {t.round3Desc}
             </p>
           </CardHeader>
           <CardContent>
@@ -324,7 +379,7 @@ export default function DebateStage({ bullThesis, bearThesis, rebuttals, bullDef
               {/* Bull Defense */}
               {bullDefense && bullDefense.length > 0 && (
                 <ThesisCard
-                  title="Bull Defense"
+                  title={t.bullDefense}
                   icon={<Shield className="w-5 h-5" />}
                   thesis={bullDefense}
                   colorScheme="green"
@@ -334,7 +389,7 @@ export default function DebateStage({ bullThesis, bearThesis, rebuttals, bullDef
               {/* Bear Defense */}
               {bearDefense && bearDefense.length > 0 && (
                 <ThesisCard
-                  title="Bear Defense"
+                  title={t.bearDefense}
                   icon={<Shield className="w-5 h-5" />}
                   thesis={bearDefense}
                   colorScheme="red"
