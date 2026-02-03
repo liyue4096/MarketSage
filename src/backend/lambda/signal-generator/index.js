@@ -51,7 +51,151 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 var client_secrets_manager_1 = require("@aws-sdk/client-secrets-manager");
-var pg_1 = require("pg");
+// Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
+var client_rds_data_1 = require("@aws-sdk/client-rds-data");
+function convertPositionalToNamed(sql) {
+    var index = 0;
+    return sql.replace(/\$(\d+)/g, function () { return ":p".concat(index++); });
+}
+// Check if string looks like a date (YYYY-MM-DD format)
+function isDateString(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+function toSqlParameter(value, index) {
+    var name = "p".concat(index);
+    if (value === null || value === undefined)
+        return { name: name, value: { isNull: true } };
+    if (typeof value === 'string') {
+        if (isDateString(value)) {
+            return { name: name, value: { stringValue: value }, typeHint: 'DATE' };
+        }
+        return { name: name, value: { stringValue: value } };
+    }
+    if (typeof value === 'number') {
+        return Number.isInteger(value) ? { name: name, value: { longValue: value } } : { name: name, value: { doubleValue: value } };
+    }
+    if (typeof value === 'boolean')
+        return { name: name, value: { booleanValue: value } };
+    if (Array.isArray(value))
+        return { name: name, value: { stringValue: "{".concat(value.join(','), "}") } };
+    return { name: name, value: { stringValue: String(value) } };
+}
+function fromField(field) {
+    var f = field;
+    if (f.isNull)
+        return null;
+    if (f.stringValue !== undefined)
+        return f.stringValue;
+    if (f.longValue !== undefined)
+        return Number(f.longValue);
+    if (f.doubleValue !== undefined)
+        return f.doubleValue;
+    if (f.booleanValue !== undefined)
+        return f.booleanValue;
+    return null;
+}
+var DataApiClient = /** @class */ (function () {
+    function DataApiClient(rdsClient, resourceArn, secretArn, database) {
+        this.transactionId = null;
+        this.rdsClient = rdsClient;
+        this.resourceArn = resourceArn;
+        this.secretArn = secretArn;
+        this.database = database;
+    }
+    DataApiClient.prototype.query = function (sql, params) {
+        return __awaiter(this, void 0, void 0, function () {
+            var trimmedSql, response_1, convertedSql, sqlParams, response, columnNames, rows;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        trimmedSql = sql.trim().toUpperCase();
+                        if (!(trimmedSql === 'BEGIN' || trimmedSql.startsWith('BEGIN'))) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.rdsClient.send(new client_rds_data_1.BeginTransactionCommand({
+                                resourceArn: this.resourceArn, secretArn: this.secretArn, database: this.database,
+                            }))];
+                    case 1:
+                        response_1 = _c.sent();
+                        this.transactionId = response_1.transactionId || null;
+                        return [2 /*return*/, { rows: [], rowCount: 0 }];
+                    case 2:
+                        if (!(trimmedSql === 'COMMIT' || trimmedSql.startsWith('COMMIT'))) return [3 /*break*/, 5];
+                        if (!this.transactionId) return [3 /*break*/, 4];
+                        return [4 /*yield*/, this.rdsClient.send(new client_rds_data_1.CommitTransactionCommand({
+                                resourceArn: this.resourceArn, secretArn: this.secretArn, transactionId: this.transactionId,
+                            }))];
+                    case 3:
+                        _c.sent();
+                        this.transactionId = null;
+                        _c.label = 4;
+                    case 4: return [2 /*return*/, { rows: [], rowCount: 0 }];
+                    case 5:
+                        if (!(trimmedSql === 'ROLLBACK' || trimmedSql.startsWith('ROLLBACK'))) return [3 /*break*/, 8];
+                        if (!this.transactionId) return [3 /*break*/, 7];
+                        return [4 /*yield*/, this.rdsClient.send(new client_rds_data_1.RollbackTransactionCommand({
+                                resourceArn: this.resourceArn, secretArn: this.secretArn, transactionId: this.transactionId,
+                            }))];
+                    case 6:
+                        _c.sent();
+                        this.transactionId = null;
+                        _c.label = 7;
+                    case 7: return [2 /*return*/, { rows: [], rowCount: 0 }];
+                    case 8:
+                        convertedSql = convertPositionalToNamed(sql);
+                        sqlParams = params === null || params === void 0 ? void 0 : params.map(function (value, index) { return toSqlParameter(value, index); });
+                        return [4 /*yield*/, this.rdsClient.send(new client_rds_data_1.ExecuteStatementCommand({
+                                resourceArn: this.resourceArn, secretArn: this.secretArn, database: this.database,
+                                sql: convertedSql, parameters: sqlParams, includeResultMetadata: true,
+                                transactionId: this.transactionId || undefined,
+                            }))];
+                    case 9:
+                        response = _c.sent();
+                        columnNames = ((_a = response.columnMetadata) === null || _a === void 0 ? void 0 : _a.map(function (col) { return col.name || ''; })) || [];
+                        rows = (response.records || []).map(function (record) {
+                            var row = {};
+                            record.forEach(function (field, index) {
+                                row[columnNames[index] || "col".concat(index)] = fromField(field);
+                            });
+                            return row;
+                        });
+                        return [2 /*return*/, { rows: rows, rowCount: (_b = response.numberOfRecordsUpdated) !== null && _b !== void 0 ? _b : rows.length }];
+                }
+            });
+        });
+    };
+    DataApiClient.prototype.release = function () { };
+    return DataApiClient;
+}());
+var DataApiPool = /** @class */ (function () {
+    function DataApiPool(resourceArn, secretArn, database) {
+        this.rdsClient = new client_rds_data_1.RDSDataClient({ region: process.env.AWS_REGION || 'us-west-2' });
+        this.resourceArn = resourceArn;
+        this.secretArn = secretArn;
+        this.database = database;
+    }
+    DataApiPool.prototype.query = function (sql, params) {
+        return __awaiter(this, void 0, void 0, function () {
+            var client;
+            return __generator(this, function (_a) {
+                client = new DataApiClient(this.rdsClient, this.resourceArn, this.secretArn, this.database);
+                return [2 /*return*/, client.query(sql, params)];
+            });
+        });
+    };
+    DataApiPool.prototype.connect = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, new DataApiClient(this.rdsClient, this.resourceArn, this.secretArn, this.database)];
+            });
+        });
+    };
+    DataApiPool.prototype.end = function () {
+        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
+            return [2 /*return*/];
+        }); });
+    };
+    return DataApiPool;
+}());
 // Migration SQL for ma_signals table
 var MIGRATION_SQL = "\n-- Drop and recreate ma_signals table with new schema\nDROP TABLE IF EXISTS ma_signals CASCADE;\n\n-- Table: ma_signals (Moving Average Crossover Signals)\n-- Only stores valid signals (CROSS_ABOVE/CROSS_BELOW) for tickers with price increase\nCREATE TABLE IF NOT EXISTS ma_signals (\n    signal_date DATE NOT NULL,\n    ticker VARCHAR(10) NOT NULL,\n    close_price NUMERIC(12, 4) NOT NULL,\n    prev_close_price NUMERIC(12, 4) NOT NULL,\n    price_change_pct NUMERIC(8, 4) NOT NULL,\n    ma_20_signal VARCHAR(20),\n    ma_60_signal VARCHAR(20),\n    ma_250_signal VARCHAR(20),\n    sma_20 NUMERIC(12, 4),\n    sma_60 NUMERIC(12, 4),\n    sma_250 NUMERIC(12, 4),\n    generated_at TIMESTAMP NOT NULL DEFAULT NOW(),\n    reported_at TIMESTAMP,\n    PRIMARY KEY (signal_date, ticker),\n    FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)\n) PARTITION BY RANGE (signal_date);\n\n-- Create partitions for ma_signals table (years 2025-2030)\nDO $$\nBEGIN\n    FOR year IN 2025..2030 LOOP\n        EXECUTE format(\n            'CREATE TABLE IF NOT EXISTS ma_signals_%s PARTITION OF ma_signals FOR VALUES FROM (%L) TO (%L)',\n            year,\n            year || '-01-01',\n            (year + 1) || '-01-01'\n        );\n    END LOOP;\nEND $$;\n\n-- Create indexes for efficient querying\nCREATE INDEX IF NOT EXISTS idx_ma_signals_ticker ON ma_signals(ticker);\nCREATE INDEX IF NOT EXISTS idx_ma_signals_date_desc ON ma_signals(signal_date DESC);\nCREATE INDEX IF NOT EXISTS idx_ma_signals_unreported ON ma_signals(signal_date) WHERE reported_at IS NULL;\n";
 // Get secret from Secrets Manager
@@ -71,31 +215,12 @@ function getSecret(secretName) {
         });
     });
 }
-// Get database pool
+// Get database pool using RDS Data API (no VPC/NAT Gateway needed)
 function getDbPool() {
-    return __awaiter(this, void 0, void 0, function () {
-        var secretName, secretStr, secret;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    secretName = process.env.DB_SECRET_ARN || 'marketsage/aurora/credentials';
-                    return [4 /*yield*/, getSecret(secretName)];
-                case 1:
-                    secretStr = _a.sent();
-                    secret = JSON.parse(secretStr);
-                    return [2 /*return*/, new pg_1.Pool({
-                            host: secret.host || process.env.DB_CLUSTER_ENDPOINT,
-                            port: secret.port || 5432,
-                            database: secret.dbname || process.env.DB_NAME || 'marketsage',
-                            user: secret.username,
-                            password: secret.password,
-                            max: 10,
-                            idleTimeoutMillis: 30000,
-                            connectionTimeoutMillis: 30000, // 30s to handle Aurora Serverless cold starts
-                        })];
-            }
-        });
-    });
+    var resourceArn = process.env.DB_CLUSTER_ARN;
+    var secretArn = process.env.DB_SECRET_ARN;
+    var database = process.env.DB_NAME || 'marketsage';
+    return new DataApiPool(resourceArn, secretArn, database);
 }
 // Get current trading day (today in ET)
 function getCurrentTradingDay() {
@@ -205,7 +330,8 @@ function generateSignals(pool, tradeDate) {
                         reportedAt: null,
                     };
                     // Insert valid signal into database
-                    return [4 /*yield*/, client.query("\n        INSERT INTO ma_signals (\n          signal_date, ticker, close_price, prev_close_price, price_change_pct,\n          ma_20_signal, ma_60_signal, ma_250_signal,\n          sma_20, sma_60, sma_250, generated_at\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        ON CONFLICT (signal_date, ticker) DO UPDATE SET\n          close_price = EXCLUDED.close_price,\n          prev_close_price = EXCLUDED.prev_close_price,\n          price_change_pct = EXCLUDED.price_change_pct,\n          ma_20_signal = EXCLUDED.ma_20_signal,\n          ma_60_signal = EXCLUDED.ma_60_signal,\n          ma_250_signal = EXCLUDED.ma_250_signal,\n          sma_20 = EXCLUDED.sma_20,\n          sma_60 = EXCLUDED.sma_60,\n          sma_250 = EXCLUDED.sma_250,\n          generated_at = EXCLUDED.generated_at\n      ", [
+                    // Use NOW() for generated_at since RDS Data API doesn't auto-convert ISO strings to timestamps
+                    return [4 /*yield*/, client.query("\n        INSERT INTO ma_signals (\n          signal_date, ticker, close_price, prev_close_price, price_change_pct,\n          ma_20_signal, ma_60_signal, ma_250_signal,\n          sma_20, sma_60, sma_250, generated_at\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())\n        ON CONFLICT (signal_date, ticker) DO UPDATE SET\n          close_price = EXCLUDED.close_price,\n          prev_close_price = EXCLUDED.prev_close_price,\n          price_change_pct = EXCLUDED.price_change_pct,\n          ma_20_signal = EXCLUDED.ma_20_signal,\n          ma_60_signal = EXCLUDED.ma_60_signal,\n          ma_250_signal = EXCLUDED.ma_250_signal,\n          sma_20 = EXCLUDED.sma_20,\n          sma_60 = EXCLUDED.sma_60,\n          sma_250 = EXCLUDED.sma_250,\n          generated_at = NOW()\n      ", [
                             tradeDate,
                             row.ticker,
                             row.close_price,
@@ -217,10 +343,10 @@ function generateSignals(pool, tradeDate) {
                             row.sma_20,
                             row.sma_60,
                             row.sma_250,
-                            generatedAt,
                         ])];
                 case 6:
                     // Insert valid signal into database
+                    // Use NOW() for generated_at since RDS Data API doesn't auto-convert ISO strings to timestamps
                     _b.sent();
                     signals.push(signal);
                     _b.label = 7;

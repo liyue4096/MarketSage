@@ -12,11 +12,13 @@ import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-sec
 import {
   RDSDataClient,
   ExecuteStatementCommand,
+  BatchExecuteStatementCommand,
   BeginTransactionCommand,
   CommitTransactionCommand,
   RollbackTransactionCommand,
   Field,
   TypeHint,
+  SqlParameter,
 } from '@aws-sdk/client-rds-data';
 
 // ============================================
@@ -71,11 +73,12 @@ function toSqlParameter(value: unknown, index: number): { name: string; value: F
 
 // Convert RDS Data API Field to JavaScript value
 function fromField(field: Field): unknown {
-  if (field.isNull) return null;
-  if (field.stringValue !== undefined) return field.stringValue;
-  if (field.longValue !== undefined) return Number(field.longValue);
-  if (field.doubleValue !== undefined) return field.doubleValue;
-  if (field.booleanValue !== undefined) return field.booleanValue;
+  const f = field as unknown as Record<string, unknown>;
+  if (f.isNull) return null;
+  if (f.stringValue !== undefined) return f.stringValue;
+  if (f.longValue !== undefined) return Number(f.longValue);
+  if (f.doubleValue !== undefined) return f.doubleValue;
+  if (f.booleanValue !== undefined) return f.booleanValue;
   return null;
 }
 
@@ -312,7 +315,7 @@ interface DataLoaderResult {
     pricesInserted?: number;
     metadataInserted?: number;
   };
-  data?: PriceRecord[];
+  data?: PriceRecord[] | Record<string, unknown>[];
 }
 
 // Migration SQL
@@ -691,7 +694,66 @@ async function runMigrations(pool: DataApiPool): Promise<void> {
   }
 }
 
-// Load snapshot data into database
+// Process a single batch of price data
+async function processPriceBatch(
+  pool: DataApiPool,
+  batch: TickerSnapshot[],
+  tradeDate: string,
+  batchIndex: number
+): Promise<{ success: boolean; pricesInserted: number; error?: string }> {
+  const client = await pool.connect();
+
+  try {
+    // Build multi-row INSERT for price_history (20×16=320 params, well under limits)
+    const priceValues: string[] = [];
+    const priceParams: unknown[] = [];
+    batch.forEach((snapshot, idx) => {
+      const dayData = snapshot.day?.c ? snapshot.day : snapshot.prevDay;
+      const baseIdx = idx * 16;
+      priceValues.push(`($${baseIdx + 1}, $${baseIdx + 2}, $${baseIdx + 3}, $${baseIdx + 4}, $${baseIdx + 5}, $${baseIdx + 6}, $${baseIdx + 7}, $${baseIdx + 8}, $${baseIdx + 9}, $${baseIdx + 10}, $${baseIdx + 11}, $${baseIdx + 12}, $${baseIdx + 13}, $${baseIdx + 14}, $${baseIdx + 15}, $${baseIdx + 16})`);
+      priceParams.push(
+        tradeDate,
+        snapshot.ticker,
+        dayData!.o,
+        dayData!.h,
+        dayData!.l,
+        dayData!.c,
+        dayData!.v,
+        dayData!.vw,
+        snapshot.todaysChange ?? null,
+        snapshot.todaysChangePerc ?? null,
+        snapshot.prevDay?.o ?? null,
+        snapshot.prevDay?.h ?? null,
+        snapshot.prevDay?.l ?? null,
+        snapshot.prevDay?.c ?? null,
+        snapshot.prevDay?.v != null ? Math.round(snapshot.prevDay.v) : null,
+        snapshot.prevDay?.vw ?? null,
+      );
+    });
+
+    await client.query(`
+      INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct,
+                                 prev_o, prev_h, prev_l, prev_c, prev_v, prev_vw)
+      VALUES ${priceValues.join(', ')}
+      ON CONFLICT (trade_date, ticker) DO UPDATE SET
+        o = EXCLUDED.o, h = EXCLUDED.h, l = EXCLUDED.l, c = EXCLUDED.c,
+        v = EXCLUDED.v, vw = EXCLUDED.vw, change = EXCLUDED.change, change_pct = EXCLUDED.change_pct,
+        prev_o = EXCLUDED.prev_o, prev_h = EXCLUDED.prev_h, prev_l = EXCLUDED.prev_l,
+        prev_c = EXCLUDED.prev_c, prev_v = EXCLUDED.prev_v, prev_vw = EXCLUDED.prev_vw
+    `, priceParams);
+
+    return { success: true, pricesInserted: batch.length };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return { success: false, pricesInserted: 0, error: errorMsg };
+  } finally {
+    client.release();
+  }
+}
+
+// Load snapshot data into database using parallel batch INSERTs
+// Uses smaller batches (20 rows) with parallel execution (5 concurrent) to maximize throughput
+// while avoiding RDS Data API statement timeouts
 async function loadSnapshotData(
   pool: DataApiPool,
   snapshots: TickerSnapshot[],
@@ -699,88 +761,102 @@ async function loadSnapshotData(
 ): Promise<{ metadataInserted: number; pricesInserted: number }> {
   console.log(`[DataLoader] Loading ${snapshots.length} tickers for ${tradeDate}...`);
 
-  const client = await pool.connect();
   let metadataInserted = 0;
   let pricesInserted = 0;
+  let batchesFailed = 0;
+  const failedBatches: number[] = [];
 
-  try {
-    await client.query('BEGIN');
+  // Filter valid snapshots first
+  const validSnapshots = snapshots.filter(snapshot => {
+    const dayData = snapshot.day?.c ? snapshot.day : snapshot.prevDay;
+    return dayData && dayData.c !== undefined;
+  });
 
-    // Process in batches of 1000
-    const batchSize = 1000;
-    for (let i = 0; i < snapshots.length; i += batchSize) {
-      const batch = snapshots.slice(i, i + batchSize);
+  console.log(`[DataLoader] Found ${validSnapshots.length} valid snapshots`);
 
-      for (const snapshot of batch) {
-        // Use prevDay if day data is empty (weekend/holiday), otherwise use day
-        const dayData = snapshot.day?.c ? snapshot.day : snapshot.prevDay;
+  // Step 1: Insert all metadata in larger batches (lighter operation)
+  const metadataBatchSize = 100;
+  console.log(`[DataLoader] Inserting ticker metadata...`);
 
-        // Skip if no data available
-        if (!dayData || dayData.c === undefined) {
-          continue;
-        }
+  for (let i = 0; i < validSnapshots.length; i += metadataBatchSize) {
+    const batch = validSnapshots.slice(i, i + metadataBatchSize);
+    const client = await pool.connect();
 
-        // Upsert ticker metadata
-        await client.query(`
-          INSERT INTO ticker_metadata (ticker, name, last_updated)
-          VALUES ($1, $2, NOW())
-          ON CONFLICT (ticker) DO UPDATE SET last_updated = NOW()
-        `, [snapshot.ticker, snapshot.ticker]);
-        metadataInserted++;
+    try {
+      const metadataValues: string[] = [];
+      const metadataParams: unknown[] = [];
+      batch.forEach((snapshot, idx) => {
+        const baseIdx = idx * 2;
+        metadataValues.push(`($${baseIdx + 1}, $${baseIdx + 2}, NOW())`);
+        metadataParams.push(snapshot.ticker, snapshot.ticker);
+      });
 
-        // Upsert price history (including change values and prevDay from snapshot)
-        await client.query(`
-          INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct,
-                                     prev_o, prev_h, prev_l, prev_c, prev_v, prev_vw)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-          ON CONFLICT (trade_date, ticker) DO UPDATE SET
-            o = EXCLUDED.o,
-            h = EXCLUDED.h,
-            l = EXCLUDED.l,
-            c = EXCLUDED.c,
-            v = EXCLUDED.v,
-            vw = EXCLUDED.vw,
-            change = EXCLUDED.change,
-            change_pct = EXCLUDED.change_pct,
-            prev_o = EXCLUDED.prev_o,
-            prev_h = EXCLUDED.prev_h,
-            prev_l = EXCLUDED.prev_l,
-            prev_c = EXCLUDED.prev_c,
-            prev_v = EXCLUDED.prev_v,
-            prev_vw = EXCLUDED.prev_vw
-        `, [
-          tradeDate,
-          snapshot.ticker,
-          dayData.o,
-          dayData.h,
-          dayData.l,
-          dayData.c,
-          dayData.v,
-          dayData.vw,
-          snapshot.todaysChange ?? null,
-          snapshot.todaysChangePerc ?? null,
-          snapshot.prevDay?.o ?? null,
-          snapshot.prevDay?.h ?? null,
-          snapshot.prevDay?.l ?? null,
-          snapshot.prevDay?.c ?? null,
-          snapshot.prevDay?.v != null ? Math.round(snapshot.prevDay.v) : null,
-          snapshot.prevDay?.vw ?? null,
-        ]);
-        pricesInserted++;
+      await client.query(`
+        INSERT INTO ticker_metadata (ticker, name, last_updated)
+        VALUES ${metadataValues.join(', ')}
+        ON CONFLICT (ticker) DO UPDATE SET last_updated = NOW()
+      `, metadataParams);
+      metadataInserted += batch.length;
+    } catch (error) {
+      console.error(`[DataLoader] Metadata batch failed: ${error instanceof Error ? error.message : error}`);
+    } finally {
+      client.release();
+    }
+  }
+  console.log(`[DataLoader] Inserted ${metadataInserted} metadata records`);
+
+  // Step 2: Insert price data with smaller batches processed in parallel
+  // Use batch size of 20 (320 params) to avoid statement timeouts
+  // Process 5 batches concurrently for better throughput
+  const priceBatchSize = 20;
+  const concurrency = 5;
+
+  // Create all batches
+  const batches: { batch: TickerSnapshot[]; index: number }[] = [];
+  for (let i = 0; i < validSnapshots.length; i += priceBatchSize) {
+    batches.push({
+      batch: validSnapshots.slice(i, i + priceBatchSize),
+      index: Math.floor(i / priceBatchSize)
+    });
+  }
+
+  console.log(`[DataLoader] Processing ${batches.length} price batches with concurrency ${concurrency}...`);
+
+  // Process batches in parallel with limited concurrency
+  for (let i = 0; i < batches.length; i += concurrency) {
+    const concurrentBatches = batches.slice(i, i + concurrency);
+
+    const results = await Promise.all(
+      concurrentBatches.map(({ batch, index }) =>
+        processPriceBatch(pool, batch, tradeDate, index)
+      )
+    );
+
+    // Tally results
+    for (let j = 0; j < results.length; j++) {
+      const result = results[j];
+      const batchIndex = concurrentBatches[j].index;
+
+      if (result.success) {
+        pricesInserted += result.pricesInserted;
+      } else {
+        batchesFailed++;
+        failedBatches.push(batchIndex);
+        console.error(`[DataLoader] Batch ${batchIndex} failed: ${result.error}`);
       }
-
-      console.log(`[DataLoader] Processed ${Math.min(i + batchSize, snapshots.length)}/${snapshots.length} tickers`);
     }
 
-    await client.query('COMMIT');
-    console.log(`[DataLoader] Successfully loaded ${pricesInserted} price records`);
-
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
+    // Progress logging every 50 batches (1000 records) or at end
+    const processedBatches = Math.min(i + concurrency, batches.length);
+    if (processedBatches % 50 === 0 || processedBatches === batches.length) {
+      console.log(`[DataLoader] Processed ${processedBatches}/${batches.length} batches, ${pricesInserted} prices inserted (${batchesFailed} failed)`);
+    }
   }
+
+  if (batchesFailed > 0) {
+    console.warn(`[DataLoader] Completed with ${batchesFailed} failed batches: [${failedBatches.slice(0, 20).join(', ')}${failedBatches.length > 20 ? '...' : ''}]`);
+  }
+  console.log(`[DataLoader] Successfully loaded ${pricesInserted} price records (${metadataInserted} metadata records)`);
 
   return { metadataInserted, pricesInserted };
 }

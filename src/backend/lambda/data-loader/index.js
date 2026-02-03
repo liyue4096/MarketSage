@@ -45,7 +45,183 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 var client_secrets_manager_1 = require("@aws-sdk/client-secrets-manager");
-var pg_1 = require("pg");
+// Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
+var client_rds_data_1 = require("@aws-sdk/client-rds-data");
+// Convert positional parameters ($1, $2, etc.) to named parameters (:p0, :p1, etc.)
+function convertPositionalToNamed(sql) {
+    var index = 0;
+    return sql.replace(/\$(\d+)/g, function () { return ":p".concat(index++); });
+}
+// Check if string looks like a date (YYYY-MM-DD format)
+function isDateString(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+// Convert JavaScript value to RDS Data API parameter format
+function toSqlParameter(value, index) {
+    var name = "p".concat(index);
+    if (value === null || value === undefined) {
+        return { name: name, value: { isNull: true } };
+    }
+    if (typeof value === 'string') {
+        // Add typeHint for date strings so PostgreSQL handles them correctly
+        if (isDateString(value)) {
+            return { name: name, value: { stringValue: value }, typeHint: 'DATE' };
+        }
+        return { name: name, value: { stringValue: value } };
+    }
+    if (typeof value === 'number') {
+        if (Number.isInteger(value)) {
+            return { name: name, value: { longValue: value } };
+        }
+        return { name: name, value: { doubleValue: value } };
+    }
+    if (typeof value === 'boolean') {
+        return { name: name, value: { booleanValue: value } };
+    }
+    if (Array.isArray(value)) {
+        // Convert array to PostgreSQL array string format
+        return { name: name, value: { stringValue: "{".concat(value.join(','), "}") } };
+    }
+    return { name: name, value: { stringValue: String(value) } };
+}
+// Convert RDS Data API Field to JavaScript value
+function fromField(field) {
+    var f = field;
+    if (f.isNull)
+        return null;
+    if (f.stringValue !== undefined)
+        return f.stringValue;
+    if (f.longValue !== undefined)
+        return Number(f.longValue);
+    if (f.doubleValue !== undefined)
+        return f.doubleValue;
+    if (f.booleanValue !== undefined)
+        return f.booleanValue;
+    return null;
+}
+// Data API Client - mimics pg PoolClient
+var DataApiClient = /** @class */ (function () {
+    function DataApiClient(rdsClient, resourceArn, secretArn, database) {
+        this.transactionId = null;
+        this.rdsClient = rdsClient;
+        this.resourceArn = resourceArn;
+        this.secretArn = secretArn;
+        this.database = database;
+    }
+    DataApiClient.prototype.query = function (sql, params) {
+        return __awaiter(this, void 0, void 0, function () {
+            var trimmedSql, response_1, convertedSql, sqlParams, command, response, columnNames, rows;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        trimmedSql = sql.trim().toUpperCase();
+                        if (!(trimmedSql === 'BEGIN' || trimmedSql === 'BEGIN TRANSACTION' || trimmedSql === 'START TRANSACTION')) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.rdsClient.send(new client_rds_data_1.BeginTransactionCommand({
+                                resourceArn: this.resourceArn,
+                                secretArn: this.secretArn,
+                                database: this.database,
+                            }))];
+                    case 1:
+                        response_1 = _c.sent();
+                        this.transactionId = response_1.transactionId || null;
+                        return [2 /*return*/, { rows: [], rowCount: 0 }];
+                    case 2:
+                        if (!(trimmedSql === 'COMMIT' || trimmedSql === 'COMMIT TRANSACTION')) return [3 /*break*/, 5];
+                        if (!this.transactionId) return [3 /*break*/, 4];
+                        return [4 /*yield*/, this.rdsClient.send(new client_rds_data_1.CommitTransactionCommand({
+                                resourceArn: this.resourceArn,
+                                secretArn: this.secretArn,
+                                transactionId: this.transactionId,
+                            }))];
+                    case 3:
+                        _c.sent();
+                        this.transactionId = null;
+                        _c.label = 4;
+                    case 4: return [2 /*return*/, { rows: [], rowCount: 0 }];
+                    case 5:
+                        if (!(trimmedSql === 'ROLLBACK' || trimmedSql === 'ROLLBACK TRANSACTION')) return [3 /*break*/, 8];
+                        if (!this.transactionId) return [3 /*break*/, 7];
+                        return [4 /*yield*/, this.rdsClient.send(new client_rds_data_1.RollbackTransactionCommand({
+                                resourceArn: this.resourceArn,
+                                secretArn: this.secretArn,
+                                transactionId: this.transactionId,
+                            }))];
+                    case 6:
+                        _c.sent();
+                        this.transactionId = null;
+                        _c.label = 7;
+                    case 7: return [2 /*return*/, { rows: [], rowCount: 0 }];
+                    case 8:
+                        convertedSql = convertPositionalToNamed(sql);
+                        sqlParams = params === null || params === void 0 ? void 0 : params.map(function (value, index) { return toSqlParameter(value, index); });
+                        command = new client_rds_data_1.ExecuteStatementCommand({
+                            resourceArn: this.resourceArn,
+                            secretArn: this.secretArn,
+                            database: this.database,
+                            sql: convertedSql,
+                            parameters: sqlParams,
+                            includeResultMetadata: true,
+                            transactionId: this.transactionId || undefined,
+                        });
+                        return [4 /*yield*/, this.rdsClient.send(command)];
+                    case 9:
+                        response = _c.sent();
+                        columnNames = ((_a = response.columnMetadata) === null || _a === void 0 ? void 0 : _a.map(function (col) { return col.name || ''; })) || [];
+                        rows = (response.records || []).map(function (record) {
+                            var row = {};
+                            record.forEach(function (field, index) {
+                                var columnName = columnNames[index] || "col".concat(index);
+                                row[columnName] = fromField(field);
+                            });
+                            return row;
+                        });
+                        return [2 /*return*/, {
+                                rows: rows,
+                                rowCount: (_b = response.numberOfRecordsUpdated) !== null && _b !== void 0 ? _b : rows.length,
+                            }];
+                }
+            });
+        });
+    };
+    DataApiClient.prototype.release = function () {
+        // No-op for Data API - connection management is handled by AWS
+    };
+    return DataApiClient;
+}());
+// Data API Pool - mimics pg Pool
+var DataApiPool = /** @class */ (function () {
+    function DataApiPool(resourceArn, secretArn, database) {
+        this.rdsClient = new client_rds_data_1.RDSDataClient({ region: process.env.AWS_REGION || 'us-west-2' });
+        this.resourceArn = resourceArn;
+        this.secretArn = secretArn;
+        this.database = database;
+    }
+    DataApiPool.prototype.query = function (sql, params) {
+        return __awaiter(this, void 0, void 0, function () {
+            var client;
+            return __generator(this, function (_a) {
+                client = new DataApiClient(this.rdsClient, this.resourceArn, this.secretArn, this.database);
+                return [2 /*return*/, client.query(sql, params)];
+            });
+        });
+    };
+    DataApiPool.prototype.connect = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, new DataApiClient(this.rdsClient, this.resourceArn, this.secretArn, this.database)];
+            });
+        });
+    };
+    DataApiPool.prototype.end = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
+            });
+        });
+    };
+    return DataApiPool;
+}());
 // Migration SQL
 var MIGRATION_SQL = "\n-- Table A: ticker_metadata (The Registry)\nCREATE TABLE IF NOT EXISTS ticker_metadata (\n    ticker VARCHAR(10) PRIMARY KEY,\n    name TEXT NOT NULL,\n    sector VARCHAR(100),\n    industry VARCHAR(100),\n    market_cap BIGINT,\n    last_updated TIMESTAMP DEFAULT NOW()\n);\n\nCREATE INDEX IF NOT EXISTS idx_ticker_metadata_sector ON ticker_metadata(sector);\n\n-- Table B: price_history (The Time-Series Core)\nCREATE TABLE IF NOT EXISTS price_history (\n    trade_date DATE NOT NULL,\n    ticker VARCHAR(10) NOT NULL,\n    o NUMERIC(18,4),\n    h NUMERIC(18,4),\n    l NUMERIC(18,4),\n    c NUMERIC(18,4) NOT NULL,\n    v BIGINT,\n    vw NUMERIC(18,4),\n    change NUMERIC(20,10),       -- Today's change from previous day (high precision)\n    change_pct NUMERIC(20,10),   -- Today's change percentage (high precision)\n    -- Previous day OHLCV (optional, only from snapshot endpoint)\n    prev_o NUMERIC(18,4),\n    prev_h NUMERIC(18,4),\n    prev_l NUMERIC(18,4),\n    prev_c NUMERIC(18,4),\n    prev_v BIGINT,\n    prev_vw NUMERIC(18,4),\n    PRIMARY KEY (trade_date, ticker),\n    FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)\n) PARTITION BY RANGE (trade_date);\n\n-- Migration: Drop close_price column if it exists (it was redundant with c)\nDO $$\nBEGIN\n    ALTER TABLE price_history DROP COLUMN IF EXISTS close_price;\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Alter v column type if table already exists (for migrations)\nDO $$\nBEGIN\n    ALTER TABLE price_history ALTER COLUMN v TYPE BIGINT;\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Add change column if it doesn't exist\nDO $$\nBEGIN\n    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change NUMERIC(20,10);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Alter change column to high precision\nDO $$\nBEGIN\n    ALTER TABLE price_history ALTER COLUMN change TYPE NUMERIC(20,10);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Add change_pct column if it doesn't exist\nDO $$\nBEGIN\n    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS change_pct NUMERIC(20,10);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Alter change_pct column to high precision\nDO $$\nBEGIN\n    ALTER TABLE price_history ALTER COLUMN change_pct TYPE NUMERIC(20,10);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Add prev_o column if it doesn't exist\nDO $$\nBEGIN\n    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_o NUMERIC(18,4);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Add prev_h column if it doesn't exist\nDO $$\nBEGIN\n    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_h NUMERIC(18,4);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Add prev_l column if it doesn't exist\nDO $$\nBEGIN\n    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_l NUMERIC(18,4);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Add prev_c column if it doesn't exist\nDO $$\nBEGIN\n    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_c NUMERIC(18,4);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Add prev_v column if it doesn't exist\nDO $$\nBEGIN\n    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_v BIGINT;\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Add prev_vw column if it doesn't exist\nDO $$\nBEGIN\n    ALTER TABLE price_history ADD COLUMN IF NOT EXISTS prev_vw NUMERIC(18,4);\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Migration: Increase NUMERIC precision to prevent overflow errors\n-- Change NUMERIC(12,4) to NUMERIC(18,4) for price columns, NUMERIC(18,10) to NUMERIC(20,10) for change columns\nDO $$\nDECLARE\n    partition_name TEXT;\nBEGIN\n    -- First, alter the parent table\n    ALTER TABLE price_history ALTER COLUMN o TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN h TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN l TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN c TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN vw TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN prev_o TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN prev_h TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN prev_l TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN prev_c TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN prev_vw TYPE NUMERIC(18,4);\n    ALTER TABLE price_history ALTER COLUMN change TYPE NUMERIC(20,10);\n    ALTER TABLE price_history ALTER COLUMN change_pct TYPE NUMERIC(20,10);\n\n    -- Explicitly alter each partition (2020-2030)\n    FOR year IN 2020..2030 LOOP\n        partition_name := 'price_history_' || year;\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN o TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN h TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN l TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN c TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN vw TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_o TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_h TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_l TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_c TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN prev_vw TYPE NUMERIC(18,4)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN change TYPE NUMERIC(20,10)', partition_name);\n        EXECUTE format('ALTER TABLE IF EXISTS %I ALTER COLUMN change_pct TYPE NUMERIC(20,10)', partition_name);\n    END LOOP;\nEXCEPTION\n    WHEN others THEN NULL;\nEND $$;\n\n-- Create partitions for years 2020-2030\nDO $$\nBEGIN\n    FOR year IN 2020..2030 LOOP\n        EXECUTE format(\n            'CREATE TABLE IF NOT EXISTS price_history_%s PARTITION OF price_history FOR VALUES FROM (%L) TO (%L)',\n            year,\n            year || '-01-01',\n            (year + 1) || '-01-01'\n        );\n    END LOOP;\nEND $$;\n\nCREATE INDEX IF NOT EXISTS idx_price_history_ticker ON price_history(ticker);\n\n-- Table C: russell_1000 (Russell 1000 Index Constituents)\nCREATE TABLE IF NOT EXISTS russell_1000 (\n    ticker VARCHAR(10) PRIMARY KEY,\n    name TEXT NOT NULL\n);\n\n-- Table C2: nasdaq_100 (Nasdaq 100 Index Constituents)\nCREATE TABLE IF NOT EXISTS nasdaq_100 (\n    ticker VARCHAR(10) PRIMARY KEY,\n    name TEXT NOT NULL,\n    weight NUMERIC(8, 4)  -- Index weight percentage (e.g., 13.60 for 13.60%)\n);\n\n-- Table D: sma (Simple Moving Averages)\n-- Stores 20-day, 60-day, and 250-day SMA values for each ticker per date\nCREATE TABLE IF NOT EXISTS sma (\n    trade_date DATE NOT NULL,\n    ticker VARCHAR(10) NOT NULL,\n    sma_20 NUMERIC(18,4),   -- 20-day Simple Moving Average\n    sma_60 NUMERIC(18,4),   -- 60-day Simple Moving Average\n    sma_250 NUMERIC(18,4),  -- 250-day Simple Moving Average\n    last_updated TIMESTAMP DEFAULT NOW(),\n    PRIMARY KEY (trade_date, ticker),\n    FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)\n) PARTITION BY RANGE (trade_date);\n\n-- Create partitions for SMA table (years 2020-2030)\nDO $$\nBEGIN\n    FOR year IN 2020..2030 LOOP\n        EXECUTE format(\n            'CREATE TABLE IF NOT EXISTS sma_%s PARTITION OF sma FOR VALUES FROM (%L) TO (%L)',\n            year,\n            year || '-01-01',\n            (year + 1) || '-01-01'\n        );\n    END LOOP;\nEND $$;\n\nCREATE INDEX IF NOT EXISTS idx_sma_ticker ON sma(ticker);\n\n-- Table E: ma_signals (Moving Average Crossover Signals)\n-- Stores 20-day, 60-day, and 250-day MA crossover signals for each ticker per date\nCREATE TABLE IF NOT EXISTS ma_signals (\n    signal_date DATE NOT NULL,\n    ticker VARCHAR(10) NOT NULL,\n    ma_20_signal VARCHAR(20),       -- Signal: CROSS_ABOVE, CROSS_BELOW, NONE\n    ma_60_signal VARCHAR(20),\n    ma_250_signal VARCHAR(20),\n    close_price NUMERIC(12, 4),\n    sma_20 NUMERIC(12, 4),\n    sma_60 NUMERIC(12, 4),\n    sma_250 NUMERIC(12, 4),\n    created_at TIMESTAMP DEFAULT NOW(),\n    PRIMARY KEY (signal_date, ticker),\n    FOREIGN KEY (ticker) REFERENCES ticker_metadata(ticker)\n) PARTITION BY RANGE (signal_date);\n\n-- Create partitions for ma_signals table (years 2025-2030)\nDO $$\nBEGIN\n    FOR year IN 2025..2030 LOOP\n        EXECUTE format(\n            'CREATE TABLE IF NOT EXISTS ma_signals_%s PARTITION OF ma_signals FOR VALUES FROM (%L) TO (%L)',\n            year,\n            year || '-01-01',\n            (year + 1) || '-01-01'\n        );\n    END LOOP;\nEND $$;\n\nCREATE INDEX IF NOT EXISTS idx_ma_signals_ticker ON ma_signals(ticker);\nCREATE INDEX IF NOT EXISTS idx_ma_signals_date_desc ON ma_signals(signal_date DESC);\n";
 // Get secret from Secrets Manager
@@ -66,30 +242,12 @@ function getSecret(secretName) {
     });
 }
 // Get database pool
+// Get database pool using RDS Data API (no VPC/NAT Gateway needed)
 function getDbPool() {
-    return __awaiter(this, void 0, void 0, function () {
-        var secretName, secretStr, secret;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    secretName = process.env.DB_SECRET_ARN || 'marketsage/aurora/credentials';
-                    return [4 /*yield*/, getSecret(secretName)];
-                case 1:
-                    secretStr = _a.sent();
-                    secret = JSON.parse(secretStr);
-                    return [2 /*return*/, new pg_1.Pool({
-                            host: secret.host || process.env.DB_CLUSTER_ENDPOINT,
-                            port: secret.port || 5432,
-                            database: secret.dbname || process.env.DB_NAME || 'marketsage',
-                            user: secret.username,
-                            password: secret.password,
-                            max: 10,
-                            idleTimeoutMillis: 30000,
-                            connectionTimeoutMillis: 30000, // 30s to handle Aurora Serverless cold starts
-                        })];
-            }
-        });
-    });
+    var resourceArn = process.env.DB_CLUSTER_ARN;
+    var secretArn = process.env.DB_SECRET_ARN;
+    var database = process.env.DB_NAME || 'marketsage';
+    return new DataApiPool(resourceArn, secretArn, database);
 }
 // Get Polygon API key
 function getPolygonApiKey() {
@@ -216,96 +374,98 @@ function runMigrations(pool) {
         });
     });
 }
-// Load snapshot data into database
+// Load snapshot data into database using batch INSERT (much faster with RDS Data API)
 function loadSnapshotData(pool, snapshots, tradeDate) {
     return __awaiter(this, void 0, void 0, function () {
-        var client, metadataInserted, pricesInserted, batchSize, i, batch, _i, batch_1, snapshot, dayData, error_1;
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
-        return __generator(this, function (_q) {
-            switch (_q.label) {
+        var metadataInserted, pricesInserted, batchesFailed, failedBatches, validSnapshots, batchSize, _loop_1, i;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
                 case 0:
                     console.log("[DataLoader] Loading ".concat(snapshots.length, " tickers for ").concat(tradeDate, "..."));
-                    return [4 /*yield*/, pool.connect()];
-                case 1:
-                    client = _q.sent();
                     metadataInserted = 0;
                     pricesInserted = 0;
-                    _q.label = 2;
-                case 2:
-                    _q.trys.push([2, 13, 15, 16]);
-                    return [4 /*yield*/, client.query('BEGIN')];
-                case 3:
-                    _q.sent();
-                    batchSize = 1000;
+                    batchesFailed = 0;
+                    failedBatches = [];
+                    validSnapshots = snapshots.filter(function (snapshot) {
+                        var _a;
+                        var dayData = ((_a = snapshot.day) === null || _a === void 0 ? void 0 : _a.c) ? snapshot.day : snapshot.prevDay;
+                        return dayData && dayData.c !== undefined;
+                    });
+                    console.log("[DataLoader] Found ".concat(validSnapshots.length, " valid snapshots"));
+                    batchSize = 50;
+                    _loop_1 = function (i) {
+                        var batchIndex, batch, client, metadataValues_1, metadataParams_1, priceValues_1, priceParams_1, batchError_1, errorMsg;
+                        return __generator(this, function (_b) {
+                            switch (_b.label) {
+                                case 0:
+                                    batchIndex = Math.floor(i / batchSize);
+                                    batch = validSnapshots.slice(i, i + batchSize);
+                                    return [4 /*yield*/, pool.connect()];
+                                case 1:
+                                    client = _b.sent();
+                                    _b.label = 2;
+                                case 2:
+                                    _b.trys.push([2, 5, 6, 7]);
+                                    metadataValues_1 = [];
+                                    metadataParams_1 = [];
+                                    batch.forEach(function (snapshot, idx) {
+                                        var baseIdx = idx * 2;
+                                        metadataValues_1.push("($".concat(baseIdx + 1, ", $").concat(baseIdx + 2, ", NOW())"));
+                                        metadataParams_1.push(snapshot.ticker, snapshot.ticker);
+                                    });
+                                    return [4 /*yield*/, client.query("\n        INSERT INTO ticker_metadata (ticker, name, last_updated)\n        VALUES ".concat(metadataValues_1.join(', '), "\n        ON CONFLICT (ticker) DO UPDATE SET last_updated = NOW()\n      "), metadataParams_1)];
+                                case 3:
+                                    _b.sent();
+                                    metadataInserted += batch.length;
+                                    priceValues_1 = [];
+                                    priceParams_1 = [];
+                                    batch.forEach(function (snapshot, idx) {
+                                        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
+                                        var dayData = ((_a = snapshot.day) === null || _a === void 0 ? void 0 : _a.c) ? snapshot.day : snapshot.prevDay;
+                                        var baseIdx = idx * 16;
+                                        priceValues_1.push("($".concat(baseIdx + 1, ", $").concat(baseIdx + 2, ", $").concat(baseIdx + 3, ", $").concat(baseIdx + 4, ", $").concat(baseIdx + 5, ", $").concat(baseIdx + 6, ", $").concat(baseIdx + 7, ", $").concat(baseIdx + 8, ", $").concat(baseIdx + 9, ", $").concat(baseIdx + 10, ", $").concat(baseIdx + 11, ", $").concat(baseIdx + 12, ", $").concat(baseIdx + 13, ", $").concat(baseIdx + 14, ", $").concat(baseIdx + 15, ", $").concat(baseIdx + 16, ")"));
+                                        priceParams_1.push(tradeDate, snapshot.ticker, dayData.o, dayData.h, dayData.l, dayData.c, dayData.v, dayData.vw, (_b = snapshot.todaysChange) !== null && _b !== void 0 ? _b : null, (_c = snapshot.todaysChangePerc) !== null && _c !== void 0 ? _c : null, (_e = (_d = snapshot.prevDay) === null || _d === void 0 ? void 0 : _d.o) !== null && _e !== void 0 ? _e : null, (_g = (_f = snapshot.prevDay) === null || _f === void 0 ? void 0 : _f.h) !== null && _g !== void 0 ? _g : null, (_j = (_h = snapshot.prevDay) === null || _h === void 0 ? void 0 : _h.l) !== null && _j !== void 0 ? _j : null, (_l = (_k = snapshot.prevDay) === null || _k === void 0 ? void 0 : _k.c) !== null && _l !== void 0 ? _l : null, ((_m = snapshot.prevDay) === null || _m === void 0 ? void 0 : _m.v) != null ? Math.round(snapshot.prevDay.v) : null, (_p = (_o = snapshot.prevDay) === null || _o === void 0 ? void 0 : _o.vw) !== null && _p !== void 0 ? _p : null);
+                                    });
+                                    return [4 /*yield*/, client.query("\n        INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct,\n                                   prev_o, prev_h, prev_l, prev_c, prev_v, prev_vw)\n        VALUES ".concat(priceValues_1.join(', '), "\n        ON CONFLICT (trade_date, ticker) DO UPDATE SET\n          o = EXCLUDED.o, h = EXCLUDED.h, l = EXCLUDED.l, c = EXCLUDED.c,\n          v = EXCLUDED.v, vw = EXCLUDED.vw, change = EXCLUDED.change, change_pct = EXCLUDED.change_pct,\n          prev_o = EXCLUDED.prev_o, prev_h = EXCLUDED.prev_h, prev_l = EXCLUDED.prev_l,\n          prev_c = EXCLUDED.prev_c, prev_v = EXCLUDED.prev_v, prev_vw = EXCLUDED.prev_vw\n      "), priceParams_1)];
+                                case 4:
+                                    _b.sent();
+                                    pricesInserted += batch.length;
+                                    return [3 /*break*/, 7];
+                                case 5:
+                                    batchError_1 = _b.sent();
+                                    batchesFailed++;
+                                    failedBatches.push(batchIndex);
+                                    errorMsg = batchError_1 instanceof Error ? batchError_1.message : String(batchError_1);
+                                    console.error("[DataLoader] Batch ".concat(batchIndex, " failed (tickers ").concat(i, " to ").concat(i + batch.length - 1, "): ").concat(errorMsg));
+                                    return [3 /*break*/, 7];
+                                case 6:
+                                    client.release();
+                                    return [7 /*endfinally*/];
+                                case 7:
+                                    if ((i + batchSize) % 1000 === 0 || i + batchSize >= validSnapshots.length) {
+                                        console.log("[DataLoader] Processed ".concat(Math.min(i + batchSize, validSnapshots.length), "/").concat(validSnapshots.length, " tickers (").concat(batchesFailed, " batches failed)"));
+                                    }
+                                    return [2 /*return*/];
+                            }
+                        });
+                    };
                     i = 0;
-                    _q.label = 4;
-                case 4:
-                    if (!(i < snapshots.length)) return [3 /*break*/, 11];
-                    batch = snapshots.slice(i, i + batchSize);
-                    _i = 0, batch_1 = batch;
-                    _q.label = 5;
-                case 5:
-                    if (!(_i < batch_1.length)) return [3 /*break*/, 9];
-                    snapshot = batch_1[_i];
-                    dayData = ((_a = snapshot.day) === null || _a === void 0 ? void 0 : _a.c) ? snapshot.day : snapshot.prevDay;
-                    // Skip if no data available
-                    if (!dayData || dayData.c === undefined) {
-                        return [3 /*break*/, 8];
-                    }
-                    // Upsert ticker metadata
-                    return [4 /*yield*/, client.query("\n          INSERT INTO ticker_metadata (ticker, name, last_updated)\n          VALUES ($1, $2, NOW())\n          ON CONFLICT (ticker) DO UPDATE SET last_updated = NOW()\n        ", [snapshot.ticker, snapshot.ticker])];
-                case 6:
-                    // Upsert ticker metadata
-                    _q.sent();
-                    metadataInserted++;
-                    // Upsert price history (including change values and prevDay from snapshot)
-                    return [4 /*yield*/, client.query("\n          INSERT INTO price_history (trade_date, ticker, o, h, l, c, v, vw, change, change_pct,\n                                     prev_o, prev_h, prev_l, prev_c, prev_v, prev_vw)\n          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)\n          ON CONFLICT (trade_date, ticker) DO UPDATE SET\n            o = EXCLUDED.o,\n            h = EXCLUDED.h,\n            l = EXCLUDED.l,\n            c = EXCLUDED.c,\n            v = EXCLUDED.v,\n            vw = EXCLUDED.vw,\n            change = EXCLUDED.change,\n            change_pct = EXCLUDED.change_pct,\n            prev_o = EXCLUDED.prev_o,\n            prev_h = EXCLUDED.prev_h,\n            prev_l = EXCLUDED.prev_l,\n            prev_c = EXCLUDED.prev_c,\n            prev_v = EXCLUDED.prev_v,\n            prev_vw = EXCLUDED.prev_vw\n        ", [
-                            tradeDate,
-                            snapshot.ticker,
-                            dayData.o,
-                            dayData.h,
-                            dayData.l,
-                            dayData.c,
-                            dayData.v,
-                            dayData.vw,
-                            (_b = snapshot.todaysChange) !== null && _b !== void 0 ? _b : null,
-                            (_c = snapshot.todaysChangePerc) !== null && _c !== void 0 ? _c : null,
-                            (_e = (_d = snapshot.prevDay) === null || _d === void 0 ? void 0 : _d.o) !== null && _e !== void 0 ? _e : null,
-                            (_g = (_f = snapshot.prevDay) === null || _f === void 0 ? void 0 : _f.h) !== null && _g !== void 0 ? _g : null,
-                            (_j = (_h = snapshot.prevDay) === null || _h === void 0 ? void 0 : _h.l) !== null && _j !== void 0 ? _j : null,
-                            (_l = (_k = snapshot.prevDay) === null || _k === void 0 ? void 0 : _k.c) !== null && _l !== void 0 ? _l : null,
-                            ((_m = snapshot.prevDay) === null || _m === void 0 ? void 0 : _m.v) != null ? Math.round(snapshot.prevDay.v) : null,
-                            (_p = (_o = snapshot.prevDay) === null || _o === void 0 ? void 0 : _o.vw) !== null && _p !== void 0 ? _p : null,
-                        ])];
-                case 7:
-                    // Upsert price history (including change values and prevDay from snapshot)
-                    _q.sent();
-                    pricesInserted++;
-                    _q.label = 8;
-                case 8:
-                    _i++;
-                    return [3 /*break*/, 5];
-                case 9:
-                    console.log("[DataLoader] Processed ".concat(Math.min(i + batchSize, snapshots.length), "/").concat(snapshots.length, " tickers"));
-                    _q.label = 10;
-                case 10:
+                    _a.label = 1;
+                case 1:
+                    if (!(i < validSnapshots.length)) return [3 /*break*/, 4];
+                    return [5 /*yield**/, _loop_1(i)];
+                case 2:
+                    _a.sent();
+                    _a.label = 3;
+                case 3:
                     i += batchSize;
-                    return [3 /*break*/, 4];
-                case 11: return [4 /*yield*/, client.query('COMMIT')];
-                case 12:
-                    _q.sent();
-                    console.log("[DataLoader] Successfully loaded ".concat(pricesInserted, " price records"));
-                    return [3 /*break*/, 16];
-                case 13:
-                    error_1 = _q.sent();
-                    return [4 /*yield*/, client.query('ROLLBACK')];
-                case 14:
-                    _q.sent();
-                    throw error_1;
-                case 15:
-                    client.release();
-                    return [7 /*endfinally*/];
-                case 16: return [2 /*return*/, { metadataInserted: metadataInserted, pricesInserted: pricesInserted }];
+                    return [3 /*break*/, 1];
+                case 4:
+                    if (batchesFailed > 0) {
+                        console.warn("[DataLoader] Completed with ".concat(batchesFailed, " failed batches: [").concat(failedBatches.join(', '), "]"));
+                    }
+                    console.log("[DataLoader] Successfully loaded ".concat(pricesInserted, " price records (").concat(metadataInserted, " metadata records)"));
+                    return [2 /*return*/, { metadataInserted: metadataInserted, pricesInserted: pricesInserted }];
             }
         });
     });
@@ -324,7 +484,7 @@ function getCurrentTradingDay() {
     return now.toLocaleDateString('en-CA', etOptions); // en-CA gives YYYY-MM-DD format
 }
 var handler = function (event) { return __awaiter(void 0, void 0, void 0, function () {
-    var action, tradeDate, pool, apiKey, snapshot, stats, metadataCount, priceCount, tickersToQuery, result, tickersToQuery, result, russellData, client, inserted, _i, russellData_1, record, error_2, russellCount, nasdaqData, client, inserted, _a, nasdaqData_1, record, error_3, nasdaqCount, tickersToLoad, fromDate, toDate, apiKey, client, totalPricesInserted, totalMetadataInserted, _b, tickersToLoad_1, ticker, aggResponse, _c, _d, bar, barTradeDate, error_4, fromDate, toDate, batchStart, batchSize, russellResult, allTickers, totalTickers, tickersToProcess, apiKey, client, totalPricesInserted, tickersProcessed, tickersFailed, failedTickers, _e, tickersToProcess_1, ticker, aggResponse, _f, _g, bar, barTradeDate, tickerError_1, _h, nextBatchStart, hasMore, tickersToLoad, apiKey, client, smaRecordsInserted, _j, tickersToLoad_2, ticker, _k, sma20Response, sma60Response, sma250Response, sma20, sma60, sma250, smaTradeDate, error_5, batchStart, batchSize, russellResult, allTickers, totalTickers, tickersToProcess, apiKey, client, smaRecordsInserted, tickersProcessed, tickersFailed, failedTickers, _l, tickersToProcess_2, ticker, _m, sma20Response, sma60Response, sma250Response, sma20, sma60, sma250, smaTradeDate, tickerError_2, nextBatchStart, hasMore, error_6;
+    var action, tradeDate, pool, apiKey, snapshot, stats, metadataCount, priceCount, tickersToQuery, result, tickersToQuery, result, russellData, client, inserted, _i, russellData_1, record, error_1, russellCount, nasdaqData, client, inserted, _a, nasdaqData_1, record, error_2, nasdaqCount, tickersToLoad, fromDate, toDate, apiKey, client, totalPricesInserted, totalMetadataInserted, _b, tickersToLoad_1, ticker, aggResponse, _c, _d, bar, barTradeDate, error_3, fromDate, toDate, batchStart, batchSize, russellResult, allTickers, totalTickers, tickersToProcess, apiKey, client, totalPricesInserted, tickersProcessed, tickersFailed, failedTickers, _e, tickersToProcess_1, ticker, aggResponse, _f, _g, bar, barTradeDate, tickerError_1, _h, nextBatchStart, hasMore, tickersToLoad, apiKey, client, smaRecordsInserted, _j, tickersToLoad_2, ticker, _k, sma20Response, sma60Response, sma250Response, sma20, sma60, sma250, smaTradeDate, error_4, batchStart, batchSize, russellResult, allTickers, totalTickers, tickersToProcess, apiKey, client, smaRecordsInserted, tickersProcessed, tickersFailed, failedTickers, _l, tickersToProcess_2, ticker, _m, sma20Response, sma60Response, sma250Response, sma20, sma60, sma250, smaTradeDate, tickerError_2, nextBatchStart, hasMore, error_5;
     var _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21;
     return __generator(this, function (_22) {
         switch (_22.label) {
@@ -456,11 +616,11 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
                 console.log("[DataLoader] Successfully loaded ".concat(inserted, " Russell 1000 tickers"));
                 return [3 /*break*/, 28];
             case 25:
-                error_2 = _22.sent();
+                error_1 = _22.sent();
                 return [4 /*yield*/, client.query('ROLLBACK')];
             case 26:
                 _22.sent();
-                throw error_2;
+                throw error_1;
             case 27:
                 client.release();
                 return [7 /*endfinally*/];
@@ -527,11 +687,11 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
                 console.log("[DataLoader] Successfully loaded ".concat(inserted, " Nasdaq 100 tickers"));
                 return [3 /*break*/, 44];
             case 41:
-                error_3 = _22.sent();
+                error_2 = _22.sent();
                 return [4 /*yield*/, client.query('ROLLBACK')];
             case 42:
                 _22.sent();
-                throw error_3;
+                throw error_2;
             case 43:
                 client.release();
                 return [7 /*endfinally*/];
@@ -635,11 +795,11 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
                 console.log("[DataLoader] Successfully loaded ".concat(totalPricesInserted, " total price records"));
                 return [3 /*break*/, 64];
             case 61:
-                error_4 = _22.sent();
+                error_3 = _22.sent();
                 return [4 /*yield*/, client.query('ROLLBACK')];
             case 62:
                 _22.sent();
-                throw error_4;
+                throw error_3;
             case 63:
                 client.release();
                 return [7 /*endfinally*/];
@@ -882,11 +1042,11 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
                 console.log("[DataLoader] Successfully loaded ".concat(smaRecordsInserted, " SMA records"));
                 return [3 /*break*/, 106];
             case 103:
-                error_5 = _22.sent();
+                error_4 = _22.sent();
                 return [4 /*yield*/, client.query('ROLLBACK')];
             case 104:
                 _22.sent();
-                throw error_5;
+                throw error_4;
             case 105:
                 client.release();
                 return [7 /*endfinally*/];
@@ -1024,11 +1184,11 @@ var handler = function (event) { return __awaiter(void 0, void 0, void 0, functi
                     message: "Unknown action: ".concat(action),
                 }];
             case 124:
-                error_6 = _22.sent();
-                console.error('[DataLoader] Error:', error_6);
+                error_5 = _22.sent();
+                console.error('[DataLoader] Error:', error_5);
                 // Throw the error so Step Functions can retry
                 // This allows the retry configuration with exponential backoff to work
-                throw error_6;
+                throw error_5;
             case 125:
                 if (!pool) return [3 /*break*/, 127];
                 return [4 /*yield*/, pool.end()];

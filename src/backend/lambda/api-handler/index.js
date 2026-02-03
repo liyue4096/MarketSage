@@ -4,32 +4,90 @@ exports.handler = void 0;
 const client_dynamodb_1 = require("@aws-sdk/client-dynamodb");
 const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const client_secrets_manager_1 = require("@aws-sdk/client-secrets-manager");
-const pg_1 = require("pg");
+// Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
+const client_rds_data_1 = require("@aws-sdk/client-rds-data");
+function convertPositionalToNamed(sql) {
+    let index = 0;
+    return sql.replace(/\$(\d+)/g, () => `:p${index++}`);
+}
+// Check if string looks like a date (YYYY-MM-DD format)
+function isDateString(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+function toSqlParameter(value, index) {
+    const name = `p${index}`;
+    if (value === null || value === undefined)
+        return { name, value: { isNull: true } };
+    if (typeof value === 'string') {
+        if (isDateString(value)) {
+            return { name, value: { stringValue: value }, typeHint: 'DATE' };
+        }
+        return { name, value: { stringValue: value } };
+    }
+    if (typeof value === 'number') {
+        return Number.isInteger(value) ? { name, value: { longValue: value } } : { name, value: { doubleValue: value } };
+    }
+    if (typeof value === 'boolean')
+        return { name, value: { booleanValue: value } };
+    if (Array.isArray(value))
+        return { name, value: { stringValue: `{${value.join(',')}}` } };
+    return { name, value: { stringValue: String(value) } };
+}
+function fromField(field) {
+    const f = field;
+    if (f.isNull)
+        return null;
+    if (f.stringValue !== undefined)
+        return f.stringValue;
+    if (f.longValue !== undefined)
+        return Number(f.longValue);
+    if (f.doubleValue !== undefined)
+        return f.doubleValue;
+    if (f.booleanValue !== undefined)
+        return f.booleanValue;
+    return null;
+}
+class DataApiPool {
+    constructor(resourceArn, secretArn, database) {
+        this.rdsClient = new client_rds_data_1.RDSDataClient({ region: process.env.AWS_REGION || 'us-west-2' });
+        this.resourceArn = resourceArn;
+        this.secretArn = secretArn;
+        this.database = database;
+    }
+    async query(sql, params) {
+        const convertedSql = convertPositionalToNamed(sql);
+        const sqlParams = params?.map((value, index) => toSqlParameter(value, index));
+        const response = await this.rdsClient.send(new client_rds_data_1.ExecuteStatementCommand({
+            resourceArn: this.resourceArn, secretArn: this.secretArn, database: this.database,
+            sql: convertedSql, parameters: sqlParams, includeResultMetadata: true,
+        }));
+        const columnNames = response.columnMetadata?.map((col) => col.name || '') || [];
+        const rows = (response.records || []).map((record) => {
+            const row = {};
+            record.forEach((field, index) => {
+                row[columnNames[index] || `col${index}`] = fromField(field);
+            });
+            return row;
+        });
+        return { rows, rowCount: response.numberOfRecordsUpdated ?? rows.length };
+    }
+    async end() { }
+}
 const client = new client_dynamodb_1.DynamoDBClient({});
 const docClient = lib_dynamodb_1.DynamoDBDocumentClient.from(client);
 const secretsClient = new client_secrets_manager_1.SecretsManagerClient({});
 const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
-// PostgreSQL pool (lazy initialized)
-let pgPool = null;
-// Get PostgreSQL connection pool
-async function getDbPool() {
-    if (pgPool)
-        return pgPool;
-    const secretName = process.env.DB_SECRET_ARN || 'marketsage/aurora/credentials';
-    const command = new client_secrets_manager_1.GetSecretValueCommand({ SecretId: secretName });
-    const response = await secretsClient.send(command);
-    const secret = JSON.parse(response.SecretString || '{}');
-    pgPool = new pg_1.Pool({
-        host: secret.host || process.env.DB_CLUSTER_ENDPOINT,
-        port: secret.port || 5432,
-        database: secret.dbname || process.env.DB_NAME || 'marketsage',
-        user: secret.username,
-        password: secret.password,
-        max: 5,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 30000,
-    });
-    return pgPool;
+// RDS Data API pool (lazy initialized)
+let dbPool = null;
+// Get database pool using RDS Data API (no VPC/NAT Gateway needed)
+function getDbPool() {
+    if (dbPool)
+        return dbPool;
+    const resourceArn = process.env.DB_CLUSTER_ARN;
+    const secretArn = process.env.DB_SECRET_ARN;
+    const database = process.env.DB_NAME || 'marketsage';
+    dbPool = new DataApiPool(resourceArn, secretArn, database);
+    return dbPool;
 }
 // Map database signal to frontend format
 function mapSignalDirection(signal) {
@@ -151,6 +209,9 @@ function transformToStockReport(record) {
         // Chinese translations
         reportContentChinese: record.reportContentChinese,
         consensusSummaryChinese: record.consensusSummaryChinese,
+        bullThesisChinese: record.bullOpeningChinese ? transformThesis(record.bullOpeningChinese) : undefined,
+        bearThesisChinese: record.bearOpeningChinese ? transformThesis(record.bearOpeningChinese) : undefined,
+        rebuttalsChinese: record.rebuttalsChinese ? transformRebuttals(record.rebuttalsChinese) : undefined,
         appendix: buildAppendix(record.bullOpening, record.bearOpening),
         thoughtSignature: record.thoughtSignature,
     };
@@ -200,16 +261,25 @@ const handler = async (event) => {
                     body: JSON.stringify({ error: 'date query parameter is required' }),
                 };
             }
-            // Scan for reports on this date
-            const result = await docClient.send(new lib_dynamodb_1.ScanCommand({
-                TableName: TABLE_NAME,
-                FilterExpression: 'triggerDate = :date AND entityType = :et',
-                ExpressionAttributeValues: {
-                    ':date': date,
-                    ':et': 'ANALYSIS_REPORT',
-                },
-            }));
-            const reports = (result.Items || []).map((item) => transformToStockReport(item));
+            // Scan for reports on this date (with pagination to handle 1MB limit)
+            const allItems = [];
+            let lastEvaluatedKey;
+            do {
+                const result = await docClient.send(new lib_dynamodb_1.ScanCommand({
+                    TableName: TABLE_NAME,
+                    FilterExpression: 'triggerDate = :date AND entityType = :et',
+                    ExpressionAttributeValues: {
+                        ':date': date,
+                        ':et': 'ANALYSIS_REPORT',
+                    },
+                    ExclusiveStartKey: lastEvaluatedKey,
+                }));
+                if (result.Items) {
+                    allItems.push(...result.Items);
+                }
+                lastEvaluatedKey = result.LastEvaluatedKey;
+            } while (lastEvaluatedKey);
+            const reports = allItems.map((item) => transformToStockReport(item));
             return {
                 statusCode: 200,
                 headers,
@@ -271,7 +341,7 @@ const handler = async (event) => {
         // Get available signal dates
         if ((path === '/signals/dates' || path === '/prod/signals/dates') && httpMethod === 'GET') {
             console.log('[ApiHandler] Fetching signal dates');
-            const pool = await getDbPool();
+            const pool = getDbPool();
             const result = await pool.query(`
         SELECT DISTINCT signal_date::text
         FROM ma_signals
@@ -297,7 +367,7 @@ const handler = async (event) => {
                 };
             }
             console.log(`[ApiHandler] Fetching signals for date: ${date}`);
-            const pool = await getDbPool();
+            const pool = getDbPool();
             // Join with nasdaq_100 and russell_1000 to get company name and source
             const result = await pool.query(`
         SELECT
@@ -322,14 +392,14 @@ const handler = async (event) => {
       `, [date]);
             const signals = result.rows.map((row) => ({
                 ticker: row.ticker,
-                companyName: row.company_name,
+                companyName: row.company_name ?? undefined,
                 signalDate: row.signal_date,
                 closePrice: row.close_price,
                 priceChangePct: row.price_change_pct,
                 ma20Signal: mapSignalDirection(row.ma_20_signal),
                 ma60Signal: mapSignalDirection(row.ma_60_signal),
                 ma250Signal: mapSignalDirection(row.ma_250_signal),
-                source: row.source,
+                source: row.source ?? undefined,
             }));
             console.log(`[ApiHandler] Found ${signals.length} signals for ${date}`);
             return {

@@ -7,7 +7,8 @@ import TrackComparisonMatrix from '@/components/analysis/TrackComparisonMatrix';
 import DebateStage from '@/components/analysis/DebateStage';
 import ConsensusSummary from '@/components/analysis/ConsensusSummary';
 import DeepThinkingAppendix from '@/components/analysis/DeepThinkingAppendix';
-import { FileText, Globe } from 'lucide-react';
+import { FileText, Globe, ScrollText } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export type Language = 'en' | 'zh';
 
@@ -97,6 +98,25 @@ export default function AdversarialAnalysisView({ report }: AdversarialAnalysisV
             : report.consensusSummary}
           language={language}
         />
+
+        {/* Full Report Content */}
+        {(report.reportContent || report.reportContentChinese) && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ScrollText className="w-5 h-5 text-indigo-600" />
+                <CardTitle>{language === 'zh' ? '完整报告' : 'Full Report'}</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                {language === 'zh' && report.reportContentChinese
+                  ? report.reportContentChinese
+                  : report.reportContent}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Deep Thinking Appendix */}
         <DeepThinkingAppendix

@@ -61,11 +61,12 @@ function toSqlParameter(value: unknown, index: number): { name: string; value: F
 }
 
 function fromField(field: Field): unknown {
-  if (field.isNull) return null;
-  if (field.stringValue !== undefined) return field.stringValue;
-  if (field.longValue !== undefined) return Number(field.longValue);
-  if (field.doubleValue !== undefined) return field.doubleValue;
-  if (field.booleanValue !== undefined) return field.booleanValue;
+  const f = field as unknown as Record<string, unknown>;
+  if (f.isNull) return null;
+  if (f.stringValue !== undefined) return f.stringValue;
+  if (f.longValue !== undefined) return Number(f.longValue);
+  if (f.doubleValue !== undefined) return f.doubleValue;
+  if (f.booleanValue !== undefined) return f.booleanValue;
   return null;
 }
 
@@ -187,6 +188,37 @@ interface SignalGeneratorEvent {
   tradeDate?: string;  // YYYY-MM-DD format, defaults to today ET
   signalDate?: string; // For query-signals
   ticker?: string;     // For query-signals (optional filter)
+}
+
+// Type for signal generation query result row
+interface SignalGenRow {
+  ticker: string;
+  trade_date: string;
+  close_price: number;
+  prev_close_price: number;
+  sma_20: number | null;
+  sma_60: number | null;
+  sma_250: number | null;
+  ma_20_signal: string;
+  ma_60_signal: string;
+  ma_250_signal: string;
+}
+
+// Type for signal query result row
+interface SignalQueryRow {
+  signal_date: string;
+  ticker: string;
+  close_price: number;
+  prev_close_price: number;
+  price_change_pct: number;
+  ma_20_signal: string;
+  ma_60_signal: string;
+  ma_250_signal: string;
+  sma_20: number | null;
+  sma_60: number | null;
+  sma_250: number | null;
+  generated_at: string;
+  reported_at: string | null;
 }
 
 interface SignalGeneratorResult {
@@ -347,7 +379,7 @@ async function generateSignals(pool: DataApiPool, tradeDate: string): Promise<Si
       ORDER BY ticker
     `;
 
-    const result = await client.query(query, [tradeDate]);
+    const result = await client.query<SignalGenRow>(query, [tradeDate]);
     console.log(`[SignalGenerator] Found ${result.rows.length} tickers with valid crossover signals for ${tradeDate}`);
 
     if (result.rows.length === 0) {
@@ -401,13 +433,14 @@ async function generateSignals(pool: DataApiPool, tradeDate: string): Promise<Si
       };
 
       // Insert valid signal into database
+      // Use NOW() for generated_at since RDS Data API doesn't auto-convert ISO strings to timestamps
       await client.query(`
         INSERT INTO ma_signals (
           signal_date, ticker, close_price, prev_close_price, price_change_pct,
           ma_20_signal, ma_60_signal, ma_250_signal,
           sma_20, sma_60, sma_250, generated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
         ON CONFLICT (signal_date, ticker) DO UPDATE SET
           close_price = EXCLUDED.close_price,
           prev_close_price = EXCLUDED.prev_close_price,
@@ -418,7 +451,7 @@ async function generateSignals(pool: DataApiPool, tradeDate: string): Promise<Si
           sma_20 = EXCLUDED.sma_20,
           sma_60 = EXCLUDED.sma_60,
           sma_250 = EXCLUDED.sma_250,
-          generated_at = EXCLUDED.generated_at
+          generated_at = NOW()
       `, [
         tradeDate,
         row.ticker,
@@ -431,7 +464,6 @@ async function generateSignals(pool: DataApiPool, tradeDate: string): Promise<Si
         row.sma_20,
         row.sma_60,
         row.sma_250,
-        generatedAt,
       ]);
 
       signals.push(signal);
@@ -494,7 +526,7 @@ async function querySignals(pool: DataApiPool, signalDate: string, ticker?: stri
 
     query += ` ORDER BY price_change_pct DESC`;
 
-    const result = await client.query(query, params.filter(p => p !== undefined));
+    const result = await client.query<SignalQueryRow>(query, params.filter(p => p !== undefined));
 
     const signals: MASignal[] = result.rows.map(row => ({
       ticker: row.ticker,

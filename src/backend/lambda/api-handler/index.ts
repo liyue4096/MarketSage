@@ -47,11 +47,12 @@ function toSqlParameter(value: unknown, index: number): { name: string; value: F
 }
 
 function fromField(field: Field): unknown {
-  if (field.isNull) return null;
-  if (field.stringValue !== undefined) return field.stringValue;
-  if (field.longValue !== undefined) return Number(field.longValue);
-  if (field.doubleValue !== undefined) return field.doubleValue;
-  if (field.booleanValue !== undefined) return field.booleanValue;
+  const f = field as unknown as Record<string, unknown>;
+  if (f.isNull) return null;
+  if (f.stringValue !== undefined) return f.stringValue;
+  if (f.longValue !== undefined) return Number(f.longValue);
+  if (f.doubleValue !== undefined) return f.doubleValue;
+  if (f.booleanValue !== undefined) return f.booleanValue;
   return null;
 }
 
@@ -124,6 +125,19 @@ interface MASignalResponse {
   ma60Signal: 'UP' | 'DOWN' | 'NONE';
   ma250Signal: 'UP' | 'DOWN' | 'NONE';
   source?: 'nasdaq_100' | 'russell_1000';
+}
+
+// Type for signal query result from database
+interface SignalQueryRow {
+  signal_date: string;
+  ticker: string;
+  company_name: string | null;
+  close_price: number;
+  price_change_pct: number;
+  ma_20_signal: string | null;
+  ma_60_signal: string | null;
+  ma_250_signal: string | null;
+  source: string | null;
 }
 
 // Map database signal to frontend format
@@ -432,17 +446,28 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         };
       }
 
-      // Scan for reports on this date
-      const result = await docClient.send(new ScanCommand({
-        TableName: TABLE_NAME,
-        FilterExpression: 'triggerDate = :date AND entityType = :et',
-        ExpressionAttributeValues: {
-          ':date': date,
-          ':et': 'ANALYSIS_REPORT',
-        },
-      }));
+      // Scan for reports on this date (with pagination to handle 1MB limit)
+      const allItems: Record<string, unknown>[] = [];
+      let lastEvaluatedKey: Record<string, unknown> | undefined;
 
-      const reports = (result.Items || []).map((item) => transformToStockReport(item as unknown as DynamoAnalysisRecord));
+      do {
+        const result = await docClient.send(new ScanCommand({
+          TableName: TABLE_NAME,
+          FilterExpression: 'triggerDate = :date AND entityType = :et',
+          ExpressionAttributeValues: {
+            ':date': date,
+            ':et': 'ANALYSIS_REPORT',
+          },
+          ExclusiveStartKey: lastEvaluatedKey,
+        }));
+
+        if (result.Items) {
+          allItems.push(...result.Items);
+        }
+        lastEvaluatedKey = result.LastEvaluatedKey;
+      } while (lastEvaluatedKey);
+
+      const reports = allItems.map((item) => transformToStockReport(item as unknown as DynamoAnalysisRecord));
 
       return {
         statusCode: 200,
@@ -511,8 +536,8 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
     // Get available signal dates
     if ((path === '/signals/dates' || path === '/prod/signals/dates') && httpMethod === 'GET') {
       console.log('[ApiHandler] Fetching signal dates');
-      const pool = await getDbPool();
-      const result = await pool.query(`
+      const pool = getDbPool();
+      const result = await pool.query<{ signal_date: string }>(`
         SELECT DISTINCT signal_date::text
         FROM ma_signals
         ORDER BY signal_date DESC
@@ -542,10 +567,10 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       }
 
       console.log(`[ApiHandler] Fetching signals for date: ${date}`);
-      const pool = await getDbPool();
+      const pool = getDbPool();
 
       // Join with nasdaq_100 and russell_1000 to get company name and source
-      const result = await pool.query(`
+      const result = await pool.query<SignalQueryRow>(`
         SELECT
           s.signal_date::text,
           s.ticker,
@@ -569,14 +594,14 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
       const signals: MASignalResponse[] = result.rows.map((row) => ({
         ticker: row.ticker,
-        companyName: row.company_name,
+        companyName: row.company_name ?? undefined,
         signalDate: row.signal_date,
         closePrice: row.close_price,
         priceChangePct: row.price_change_pct,
         ma20Signal: mapSignalDirection(row.ma_20_signal),
         ma60Signal: mapSignalDirection(row.ma_60_signal),
         ma250Signal: mapSignalDirection(row.ma_250_signal),
-        source: row.source,
+        source: (row.source as 'nasdaq_100' | 'russell_1000') ?? undefined,
       }));
 
       console.log(`[ApiHandler] Found ${signals.length} signals for ${date}`);
