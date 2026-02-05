@@ -349,6 +349,23 @@ export class MarketsageInfraStack extends cdk.Stack {
     // Grant DynamoDB access to analysis store Lambda
     analysisTable.grantReadWriteData(analysisStoreLambda);
 
+    // Ticker Enricher Lambda - Generates company descriptions using Gemini API
+    const tickerEnricherLambda = new lambda.Function(this, 'TickerEnricherLambda', {
+      functionName: 'marketsage-ticker-enricher',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/ticker-enricher')),
+      timeout: cdk.Duration.minutes(15), // Long timeout for batch processing
+      memorySize: 1024,
+      environment: {
+        ...commonEnv,
+        GEMINI_API_KEY_SECRET: 'marketsage/api/gemini',
+        BATCH_SIZE: '50',
+        CONCURRENCY: '10',
+      },
+      layers: [lambdaLayer],
+    });
+
     // Grant DynamoDB read access to report selector Lambda
     analysisTable.grantReadData(reportSelectorLambda);
 
@@ -365,6 +382,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       dataLoaderLambda,
       signalGeneratorLambda,
       reportSelectorLambda,
+      tickerEnricherLambda,
     ];
 
     // Grant permissions for RDS Data API access (HTTPS-based, no VPC needed)
@@ -387,7 +405,7 @@ export class MarketsageInfraStack extends cdk.Stack {
     const geminiSecretArn = `arn:aws:secretsmanager:${this.region}:${this.account}:secret:marketsage/api/gemini*`;
     const polygonSecretArn = `arn:aws:secretsmanager:${this.region}:${this.account}:secret:marketsage/api/polygon*`;
 
-    [bullAgentLambda, bearAgentLambda, rebuttalAgentLambda, judgeAgentLambda, translateAgentLambda, retroExamLambda].forEach((fn) => {
+    [bullAgentLambda, bearAgentLambda, rebuttalAgentLambda, judgeAgentLambda, translateAgentLambda, retroExamLambda, tickerEnricherLambda].forEach((fn) => {
       fn.addToRolePolicy(new iam.PolicyStatement({
         actions: ['secretsmanager:GetSecretValue'],
         resources: [geminiSecretArn],

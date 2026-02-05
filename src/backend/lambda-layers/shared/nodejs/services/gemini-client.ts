@@ -58,6 +58,75 @@ export class GeminiClient {
     throw new Error("Gemini API Key not found in env or Secrets Manager");
   }
 
+  // Simple generate without thinking (for Flash and non-thinking models)
+  async generate(prompt: string, systemInstruction?: string): Promise<string> {
+    const apiKey = await this.getApiKey();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${apiKey}`;
+
+    const payload: any = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 500,
+        temperature: 0.3,
+      }
+    };
+
+    if (systemInstruction) {
+      payload.systemInstruction = { parts: [{ text: systemInstruction }] };
+    }
+
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.status === 429) {
+          const errorData = await response.json();
+          const retryDelay = this.extractRetryDelay(errorData);
+          const waitTime = retryDelay || (this.baseDelay * Math.pow(2, attempt));
+          console.warn(`[GeminiClient] Rate limited. Waiting ${waitTime}ms before retry ${attempt + 1}/${this.maxRetries}`);
+          await this.sleep(waitTime);
+          continue;
+        }
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API Error: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        let text = "";
+
+        if (data.candidates?.[0]?.content?.parts) {
+          for (const part of data.candidates[0].content.parts) {
+            if (part.text) {
+              text += part.text;
+            }
+          }
+        }
+
+        return text.trim();
+
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`[GeminiClient] Attempt ${attempt + 1} failed:`, error);
+
+        if (attempt < this.maxRetries - 1) {
+          const waitTime = this.baseDelay * Math.pow(2, attempt);
+          console.log(`[GeminiClient] Retrying in ${waitTime}ms...`);
+          await this.sleep(waitTime);
+        }
+      }
+    }
+
+    throw lastError || new Error("Gemini API call failed after retries");
+  }
+
   async generateThinking(prompt: string, systemInstruction?: string): Promise<{ text: string, thinkingTrace?: string }> {
     const apiKey = await this.getApiKey();
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${apiKey}`;

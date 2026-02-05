@@ -246,6 +246,7 @@ interface Rebuttals {
 interface StockReport {
   ticker: string;
   companyName: string;
+  companyDescription?: string; // Brief intro from russell_1000
   triggerDate: string;
   triggerType: '20MA' | '60MA' | '250MA';
   breakthroughIntensity: 'Low' | 'Medium' | 'High';
@@ -274,8 +275,28 @@ interface StockReport {
   thoughtSignature: string;
 }
 
+// Fetch company descriptions from russell_1000 for multiple tickers
+async function fetchCompanyDescriptions(tickers: string[]): Promise<Map<string, string>> {
+  if (tickers.length === 0) return new Map();
+
+  const pool = getDbPool();
+  const placeholders = tickers.map((_, i) => `$${i + 1}`).join(', ');
+  const result = await pool.query<{ ticker: string; description: string | null }>(
+    `SELECT ticker, description FROM russell_1000 WHERE ticker IN (${placeholders}) AND description IS NOT NULL AND description != ''`,
+    tickers
+  );
+
+  const descMap = new Map<string, string>();
+  for (const row of result.rows) {
+    if (row.description) {
+      descMap.set(row.ticker, row.description);
+    }
+  }
+  return descMap;
+}
+
 // Transform DynamoDB record to frontend StockReport format
-function transformToStockReport(record: DynamoAnalysisRecord): StockReport {
+function transformToStockReport(record: DynamoAnalysisRecord, companyDescription?: string): StockReport {
   // Transform thesis points
   const transformThesis = (thesis?: DynamoThesis): DebatePoint[] => {
     if (!thesis?.thesis) return [];
@@ -363,6 +384,7 @@ function transformToStockReport(record: DynamoAnalysisRecord): StockReport {
   return {
     ticker: record.ticker,
     companyName: record.companyName || record.ticker, // Use stored company name
+    companyDescription, // Brief intro from russell_1000
     triggerDate: record.triggerDate,
     triggerType: mapTriggerType(record.triggerType),
     breakthroughIntensity: getIntensity(record.triggerType),
@@ -467,7 +489,14 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         lastEvaluatedKey = result.LastEvaluatedKey;
       } while (lastEvaluatedKey);
 
-      const reports = allItems.map((item) => transformToStockReport(item as unknown as DynamoAnalysisRecord));
+      // Fetch company descriptions for all tickers
+      const tickers = allItems.map((item) => (item as DynamoAnalysisRecord).ticker);
+      const descriptions = await fetchCompanyDescriptions(tickers);
+
+      const reports = allItems.map((item) => {
+        const record = item as unknown as DynamoAnalysisRecord;
+        return transformToStockReport(record, descriptions.get(record.ticker));
+      });
 
       return {
         statusCode: 200,
@@ -524,7 +553,9 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         };
       }
 
-      const report = transformToStockReport(item as unknown as DynamoAnalysisRecord);
+      // Fetch company description
+      const descriptions = await fetchCompanyDescriptions([ticker]);
+      const report = transformToStockReport(item as unknown as DynamoAnalysisRecord, descriptions.get(ticker));
 
       return {
         statusCode: 200,

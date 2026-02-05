@@ -71,7 +71,7 @@ export default function DailyBreakthroughFeed({
       <div className="flex-1 overflow-y-auto">
         <div className="p-3 space-y-2">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-1">
-            {currentBreakthrough.reports.length} Breakthrough{currentBreakthrough.reports.length !== 1 ? 's' : ''}
+            {currentBreakthrough.reports.length} Report{currentBreakthrough.reports.length !== 1 ? 's' : ''}
           </div>
 
           {currentBreakthrough.reports.map((report) => (

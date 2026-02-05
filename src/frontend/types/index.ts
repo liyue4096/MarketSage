@@ -13,6 +13,7 @@ export type VerdictType = 'Strong Buy' | 'Neutral' | 'Short';
 export interface StockReport {
   ticker: string;
   companyName: string;
+  companyDescription?: string; // Brief intro about the company and competitors
   triggerDate: string;
   triggerType: '20MA' | '60MA' | '250MA'; // Primary signal for backwards compatibility
   activeSignals?: ('20MA' | '60MA' | '250MA')[]; // All active signals

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { StockReport } from '@/types';
 import VerdictHeader from '@/components/analysis/VerdictHeader';
-import TrackComparisonMatrix from '@/components/analysis/TrackComparisonMatrix';
+import CompanyIntroduction from '@/components/analysis/CompanyIntroduction';
 import DebateStage from '@/components/analysis/DebateStage';
 import ConsensusSummary from '@/components/analysis/ConsensusSummary';
 import DeepThinkingAppendix from '@/components/analysis/DeepThinkingAppendix';
@@ -75,8 +75,12 @@ export default function AdversarialAnalysisView({ report }: AdversarialAnalysisV
         {/* Verdict Header */}
         <VerdictHeader report={report} />
 
-        {/* Track Comparison Matrix */}
-        <TrackComparisonMatrix peerTable={report.peerTable} targetTicker={report.ticker} />
+        {/* Company Introduction */}
+        <CompanyIntroduction
+          ticker={report.ticker}
+          companyName={report.companyName}
+          description={report.companyDescription}
+        />
 
         {/* Debate Stage */}
         <DebateStage
