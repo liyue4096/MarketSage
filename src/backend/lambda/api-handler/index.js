@@ -98,6 +98,7 @@ var client = new import_client_dynamodb.DynamoDBClient({});
 var docClient = import_lib_dynamodb.DynamoDBDocumentClient.from(client);
 var secretsClient = new import_client_secrets_manager.SecretsManagerClient({});
 var TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || "marketsage-analysis";
+var COMPANY_DESC_TABLE = process.env.COMPANY_DESCRIPTIONS_TABLE || "marketsage-company-descriptions";
 var dbPool = null;
 function getDbPool() {
   if (dbPool) return dbPool;
@@ -114,19 +115,31 @@ function mapSignalDirection(signal) {
 }
 async function fetchCompanyDescriptions(tickers) {
   if (tickers.length === 0) return /* @__PURE__ */ new Map();
-  const pool = getDbPool();
-  const placeholders = tickers.map((_, i) => `$${i + 1}`).join(", ");
-  const result = await pool.query(
-    `SELECT ticker, description FROM russell_1000 WHERE ticker IN (${placeholders}) AND description IS NOT NULL AND description != ''`,
-    tickers
-  );
-  const descMap = /* @__PURE__ */ new Map();
-  for (const row of result.rows) {
-    if (row.description) {
-      descMap.set(row.ticker, row.description);
+  try {
+    const descMap = /* @__PURE__ */ new Map();
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
+      const batch = tickers.slice(i, i + BATCH_SIZE);
+      const result = await docClient.send(new import_lib_dynamodb.BatchGetCommand({
+        RequestItems: {
+          [COMPANY_DESC_TABLE]: {
+            Keys: batch.map((ticker) => ({ ticker })),
+            ProjectionExpression: "ticker, description"
+          }
+        }
+      }));
+      const items = result.Responses?.[COMPANY_DESC_TABLE] || [];
+      for (const item of items) {
+        if (item.ticker && item.description) {
+          descMap.set(item.ticker, item.description);
+        }
+      }
     }
+    return descMap;
+  } catch (error) {
+    console.warn("[ApiHandler] Failed to fetch company descriptions from DynamoDB:", error.message);
+    return /* @__PURE__ */ new Map();
   }
-  return descMap;
 }
 function transformToStockReport(record, companyDescription) {
   const transformThesis = (thesis) => {
@@ -208,6 +221,7 @@ function transformToStockReport(record, companyDescription) {
     // Brief intro from russell_1000
     triggerDate: record.triggerDate,
     triggerType: mapTriggerType(record.triggerType),
+    activeSignals: record.activeSignals?.map((s) => mapTriggerType(s)) || [mapTriggerType(record.triggerType)],
     breakthroughIntensity: getIntensity(record.triggerType),
     verdict: mapVerdict(record.verdict),
     confidence: record.confidence,

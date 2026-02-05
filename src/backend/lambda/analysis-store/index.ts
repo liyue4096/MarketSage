@@ -65,6 +65,7 @@ interface StoreAnalysisEvent {
   // For store-analysis
   triggerDate?: string;
   triggerType?: '20MA' | '60MA' | '250MA';
+  activeSignals?: ('20MA' | '60MA' | '250MA')[];
   closePrice?: number;
   peers?: string[];
   companyName?: string;
@@ -116,7 +117,7 @@ const docClient = DynamoDBDocumentClient.from(client, {
 // Store analysis results
 async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisResult> {
   const {
-    triggerDate, triggerType, closePrice, peers, companyName,
+    triggerDate, triggerType, activeSignals, closePrice, peers, companyName,
     bullOpening, bearOpening, rebuttals, bullDefense, bearDefense, judge,
     reportContentChinese, consensusSummaryChinese,
     bullOpeningChinese, bearOpeningChinese, rebuttalsChinese
@@ -152,6 +153,7 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
     companyName: companyName || ticker, // Fall back to ticker if not provided
     triggerDate,
     triggerType,
+    activeSignals: activeSignals || [triggerType], // All active signals, fallback to primary
     closePrice,
     peers: peers || [],
 

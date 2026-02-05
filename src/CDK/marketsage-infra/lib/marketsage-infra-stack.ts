@@ -124,6 +124,18 @@ export class MarketsageInfraStack extends cdk.Stack {
     );
 
     // ========================================
+    // DynamoDB Table for Company Descriptions
+    // ========================================
+    // Simple key-value store: ticker -> description
+    // More reliable than Aurora (no sleep/wake delay)
+    const companyDescriptionsTable = new dynamodb.Table(this, 'CompanyDescriptionsTable', {
+      tableName: 'marketsage-company-descriptions',
+      partitionKey: { name: 'ticker', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    // ========================================
     // Lambda Layer for shared dependencies
     // ========================================
     // Path to backend folder (relative to CDK lib directory)
@@ -282,12 +294,14 @@ export class MarketsageInfraStack extends cdk.Stack {
       environment: {
         ...commonEnv,
         ANALYSIS_TABLE_NAME: analysisTable.tableName,
+        COMPANY_DESCRIPTIONS_TABLE: companyDescriptionsTable.tableName,
       },
       layers: [lambdaLayer],
     });
 
     // Grant DynamoDB read access to API handler
     analysisTable.grantReadData(apiHandlerLambda);
+    companyDescriptionsTable.grantReadData(apiHandlerLambda);
 
     // Data Loader Lambda - Loads market data from Polygon into database
     const dataLoaderLambda = new lambda.Function(this, 'DataLoaderLambda', {
@@ -534,6 +548,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         'action': 'store-analysis',
         'triggerDate.$': '$.scanDate',
         'triggerType.$': '$.triggerType',
+        'activeSignals.$': '$.activeSignals',
         'closePrice.$': '$.closePrice',
         'peers.$': '$.peers',
         'companyName.$': '$.companyName',
@@ -587,6 +602,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         'action': 'store-analysis',
         'triggerDate.$': '$.scanDate',
         'triggerType.$': '$.triggerType',
+        'activeSignals.$': '$.activeSignals',
         'closePrice.$': '$.closePrice',
         'peers.$': '$.peers',
         'companyName.$': '$.companyName',

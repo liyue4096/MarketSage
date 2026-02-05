@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, QueryCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 // Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
 import {
@@ -98,6 +98,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 const secretsClient = new SecretsManagerClient({});
 
 const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
+const COMPANY_DESC_TABLE = process.env.COMPANY_DESCRIPTIONS_TABLE || 'marketsage-company-descriptions';
 
 // RDS Data API pool (lazy initialized)
 let dbPool: DataApiPool | null = null;
@@ -183,6 +184,7 @@ interface DynamoAnalysisRecord {
   companyName?: string;
   triggerDate: string;
   triggerType: string;
+  activeSignals?: string[];
   closePrice: number;
   verdict: string;
   confidence: number;
@@ -249,6 +251,7 @@ interface StockReport {
   companyDescription?: string; // Brief intro from russell_1000
   triggerDate: string;
   triggerType: '20MA' | '60MA' | '250MA';
+  activeSignals?: ('20MA' | '60MA' | '250MA')[];
   breakthroughIntensity: 'Low' | 'Medium' | 'High';
   verdict: 'Strong Buy' | 'Neutral' | 'Short';
   confidence: number;
@@ -275,24 +278,42 @@ interface StockReport {
   thoughtSignature: string;
 }
 
-// Fetch company descriptions from russell_1000 for multiple tickers
+// Fetch company descriptions from DynamoDB (more reliable than Aurora - no sleep/wake delay)
+// Returns empty Map on error (graceful degradation - descriptions are optional)
 async function fetchCompanyDescriptions(tickers: string[]): Promise<Map<string, string>> {
   if (tickers.length === 0) return new Map();
 
-  const pool = getDbPool();
-  const placeholders = tickers.map((_, i) => `$${i + 1}`).join(', ');
-  const result = await pool.query<{ ticker: string; description: string | null }>(
-    `SELECT ticker, description FROM russell_1000 WHERE ticker IN (${placeholders}) AND description IS NOT NULL AND description != ''`,
-    tickers
-  );
+  try {
+    const descMap = new Map<string, string>();
 
-  const descMap = new Map<string, string>();
-  for (const row of result.rows) {
-    if (row.description) {
-      descMap.set(row.ticker, row.description);
+    // DynamoDB BatchGetItem has a limit of 100 items per request
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
+      const batch = tickers.slice(i, i + BATCH_SIZE);
+
+      const result = await docClient.send(new BatchGetCommand({
+        RequestItems: {
+          [COMPANY_DESC_TABLE]: {
+            Keys: batch.map(ticker => ({ ticker })),
+            ProjectionExpression: 'ticker, description',
+          },
+        },
+      }));
+
+      const items = result.Responses?.[COMPANY_DESC_TABLE] || [];
+      for (const item of items) {
+        if (item.ticker && item.description) {
+          descMap.set(item.ticker as string, item.description as string);
+        }
+      }
     }
+
+    return descMap;
+  } catch (error) {
+    // Graceful degradation: if DynamoDB fails, skip descriptions
+    console.warn('[ApiHandler] Failed to fetch company descriptions from DynamoDB:', (error as Error).message);
+    return new Map();
   }
-  return descMap;
 }
 
 // Transform DynamoDB record to frontend StockReport format
@@ -387,6 +408,7 @@ function transformToStockReport(record: DynamoAnalysisRecord, companyDescription
     companyDescription, // Brief intro from russell_1000
     triggerDate: record.triggerDate,
     triggerType: mapTriggerType(record.triggerType),
+    activeSignals: record.activeSignals?.map(s => mapTriggerType(s)) || [mapTriggerType(record.triggerType)],
     breakthroughIntensity: getIntensity(record.triggerType),
     verdict: mapVerdict(record.verdict),
     confidence: record.confidence,
