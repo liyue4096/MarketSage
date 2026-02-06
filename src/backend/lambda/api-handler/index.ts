@@ -2,6 +2,8 @@ import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, QueryCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 // Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
 import {
   RDSDataClient,
@@ -96,9 +98,11 @@ class DataApiPool {
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 const secretsClient = new SecretsManagerClient({});
+const s3Client = new S3Client({});
 
 const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
 const COMPANY_DESC_TABLE = process.env.COMPANY_DESCRIPTIONS_TABLE || 'marketsage-company-descriptions';
+const REPORTS_BUCKET = process.env.REPORTS_BUCKET_NAME || '';
 
 // RDS Data API pool (lazy initialized)
 let dbPool: DataApiPool | null = null;
@@ -664,6 +668,60 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         headers,
         body: JSON.stringify({ date, signals }),
       };
+    }
+
+    // Download full report from S3 (presigned URL)
+    // Pattern: /reports/{ticker}/download?date=YYYY-MM-DD
+    if ((path.match(/\/reports\/[^/]+\/download$/) || path.match(/\/prod\/reports\/[^/]+\/download$/)) && httpMethod === 'GET') {
+      const ticker = path.split('/').slice(-2)[0]; // Extract ticker from path
+      const date = queryStringParameters?.date;
+
+      if (!ticker || !date) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'ticker (in path) and date (query param) are required' }),
+        };
+      }
+
+      if (!REPORTS_BUCKET) {
+        return {
+          statusCode: 503,
+          headers,
+          body: JSON.stringify({ error: 'Report downloads not configured' }),
+        };
+      }
+
+      const s3Key = `${date}/${ticker}.json`;
+      console.log(`[ApiHandler] Generating presigned URL for s3://${REPORTS_BUCKET}/${s3Key}`);
+
+      try {
+        const command = new GetObjectCommand({
+          Bucket: REPORTS_BUCKET,
+          Key: s3Key,
+        });
+
+        // Generate presigned URL valid for 5 minutes
+        const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            ticker,
+            date,
+            downloadUrl: presignedUrl,
+            expiresIn: 300,
+          }),
+        };
+      } catch (error) {
+        console.error(`[ApiHandler] Error generating presigned URL:`, error);
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({ error: 'Report not found', ticker, date }),
+        };
+      }
     }
 
     // Route not found

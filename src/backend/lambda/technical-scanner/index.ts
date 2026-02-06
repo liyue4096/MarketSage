@@ -1,23 +1,70 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.handler = void 0;
-
 /**
  * Technical Scanner Lambda
  * Calls report-selector to get tickers for analysis, then enriches them with peer data.
  * Returns formatted data for the adversarial analysis workflow.
  */
 
-const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
-// Peer mapping for common sectors (simplified - in production, use a database or API)
-const PEER_MAP = {
+// Types
+interface SelectedTicker {
+  ticker: string;
+  name: string;
+  source: 'nasdaq_100' | 'russell_1000';
+  weight?: number;
+  signalCount?: number;
+  signals?: {
+    ma20: string;
+    ma60: string;
+    ma250: string;
+  };
+  priceChangePct?: number;
+  closePrice?: number;
+  triggerType: '20MA' | '60MA' | '250MA';
+  activeSignals: ('20MA' | '60MA' | '250MA')[];
+}
+
+interface TriggeredStock {
+  ticker: string;
+  companyName: string;
+  triggerType: '20MA' | '60MA' | '250MA';
+  activeSignals: ('20MA' | '60MA' | '250MA')[];
+  closePrice?: number;
+  peers: string[];
+  source?: string;
+  weight?: number;
+  signalCount?: number;
+  signals?: {
+    ma20: string;
+    ma60: string;
+    ma250: string;
+  };
+  priceChangePct?: number;
+}
+
+interface ScannerEvent {
+  tradeDate?: string;
+  scanDate?: string;
+  nasdaqLimit?: number;
+  russellLimit?: number;
+  skipDays?: number;
+}
+
+interface ScannerResult {
+  triggeredStocks: TriggeredStock[];
+  triggeredStocksCount: number;
+  scanDate: string;
+}
+
+// Peer mapping for common sectors
+const PEER_MAP: Record<string, string[]> = {
   // Semiconductors
   'NVDA': ['AMD', 'INTC', 'QCOM'],
   'AMD': ['NVDA', 'INTC', 'QCOM'],
   'INTC': ['NVDA', 'AMD', 'QCOM'],
   'QCOM': ['NVDA', 'AMD', 'INTC'],
   'AVGO': ['NVDA', 'QCOM', 'TXN'],
+  'MU': ['NVDA', 'AMD', 'INTC'],
 
   // Big Tech
   'AAPL': ['MSFT', 'GOOGL', 'META'],
@@ -54,17 +101,11 @@ const PEER_MAP = {
   'LLYVA': ['LLYVK', 'LYV', 'EDR'],
 };
 
-// Default peers by sector (when specific mapping not available)
-function getDefaultPeers(ticker) {
-  // Return generic large cap peers as fallback
-  return ['SPY', 'QQQ', 'IWM'];
+function getPeers(ticker: string): string[] {
+  return PEER_MAP[ticker] || ['SPY', 'QQQ', 'IWM'];
 }
 
-function getPeers(ticker) {
-  return PEER_MAP[ticker] || getDefaultPeers(ticker);
-}
-
-const handler = async (event) => {
+export const handler = async (event: ScannerEvent): Promise<ScannerResult> => {
   console.log('[TechnicalScanner] Starting scan');
   console.log('[TechnicalScanner] Received event:', JSON.stringify(event));
 
@@ -74,25 +115,23 @@ const handler = async (event) => {
 
   try {
     // Call report-selector Lambda to get tickers
-    // Use !== undefined to properly handle 0 values
-    // Accept both tradeDate and scanDate (scanDate comes from Step Function input)
     const payload = {
       action: 'select-tickers',
-      tradeDate: event.tradeDate || event.scanDate, // Accept both formats from workflow
-      nasdaqLimit: event.nasdaqLimit !== undefined ? event.nasdaqLimit : 4,
-      russellLimit: event.russellLimit !== undefined ? event.russellLimit : 4,
-      skipDays: event.skipDays !== undefined ? event.skipDays : 14,
+      tradeDate: event.tradeDate || event.scanDate,
+      nasdaqLimit: event.nasdaqLimit ?? 4,
+      russellLimit: event.russellLimit ?? 4,
+      skipDays: event.skipDays ?? 14,
     };
 
     console.log('[TechnicalScanner] Calling report-selector with:', JSON.stringify(payload));
 
     const invokeCommand = new InvokeCommand({
       FunctionName: 'marketsage-report-selector',
-      Payload: JSON.stringify(payload),
+      Payload: Buffer.from(JSON.stringify(payload)),
     });
 
     const response = await lambdaClient.send(invokeCommand);
-    const responsePayload = JSON.parse(Buffer.from(response.Payload).toString());
+    const responsePayload = JSON.parse(Buffer.from(response.Payload!).toString());
 
     console.log('[TechnicalScanner] Report-selector response:', JSON.stringify(responsePayload, null, 2));
 
@@ -106,13 +145,13 @@ const handler = async (event) => {
     }
 
     // Transform selected tickers into triggered stocks format
-    const triggeredStocks = responsePayload.selectedTickers.map(ticker => ({
+    const triggeredStocks: TriggeredStock[] = responsePayload.selectedTickers.map((ticker: SelectedTicker) => ({
       ticker: ticker.ticker,
       companyName: ticker.name,
       triggerType: ticker.triggerType,
+      activeSignals: ticker.activeSignals,
       closePrice: ticker.closePrice,
       peers: getPeers(ticker.ticker),
-      // Additional metadata for logging/debugging
       source: ticker.source,
       weight: ticker.weight,
       signalCount: ticker.signalCount,
@@ -134,6 +173,3 @@ const handler = async (event) => {
     throw error;
   }
 };
-
-exports.handler = handler;
-// Updated Sun Jan 25 00:23:33 PST 2026

@@ -79,3 +79,22 @@ export async function fetchSignalsByDate(date: string): Promise<MASignal[]> {
     throw err;
   }
 }
+
+// Get download URL for full report (from S3)
+export async function getReportDownloadUrl(ticker: string, date: string): Promise<string | null> {
+  console.log('[API] Getting download URL for:', ticker, date);
+  try {
+    const res = await fetch(`${API_URL}/reports/${ticker}/download?date=${date}`);
+    console.log('[API] Download URL response status:', res.status);
+    if (!res.ok) {
+      console.warn('[API] Download URL not available (report may not exist in S3 yet)');
+      return null;
+    }
+    const data = await res.json();
+    console.log('[API] Download URL received');
+    return data.downloadUrl || null;
+  } catch (err) {
+    console.error('[API] Error getting download URL:', err);
+    return null;
+  }
+}

@@ -13,6 +13,7 @@ import * as amplify from 'aws-cdk-lib/aws-amplify';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as path from 'path';
 
 export class MarketsageInfraStack extends cdk.Stack {
@@ -133,6 +134,29 @@ export class MarketsageInfraStack extends cdk.Stack {
       partitionKey: { name: 'ticker', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    // ========================================
+    // S3 Bucket for Full Report Storage
+    // ========================================
+    // Stores complete analysis reports as JSON for download
+    // Path: s3://marketsage-reports/{date}/{ticker}.json
+    const reportsBucket = new s3.Bucket(this, 'ReportsBucket', {
+      bucketName: `marketsage-reports-${this.account}`,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      lifecycleRules: [
+        {
+          // Move old reports to Glacier after 1 year
+          transitions: [
+            {
+              storageClass: s3.StorageClass.GLACIER,
+              transitionAfter: cdk.Duration.days(365),
+            },
+          ],
+        },
+      ],
     });
 
     // ========================================
@@ -295,6 +319,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         ...commonEnv,
         ANALYSIS_TABLE_NAME: analysisTable.tableName,
         COMPANY_DESCRIPTIONS_TABLE: companyDescriptionsTable.tableName,
+        REPORTS_BUCKET_NAME: reportsBucket.bucketName,
       },
       layers: [lambdaLayer],
     });
@@ -302,6 +327,9 @@ export class MarketsageInfraStack extends cdk.Stack {
     // Grant DynamoDB read access to API handler
     analysisTable.grantReadData(apiHandlerLambda);
     companyDescriptionsTable.grantReadData(apiHandlerLambda);
+
+    // Grant S3 read access to API handler for report downloads
+    reportsBucket.grantRead(apiHandlerLambda);
 
     // Data Loader Lambda - Loads market data from Polygon into database
     const dataLoaderLambda = new lambda.Function(this, 'DataLoaderLambda', {
@@ -345,7 +373,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       layers: [lambdaLayer],
     });
 
-    // Analysis Store Lambda - Stores GAN analysis results to DynamoDB
+    // Analysis Store Lambda - Stores GAN analysis results to DynamoDB and S3
     const analysisStoreLambda = new lambda.Function(this, 'AnalysisStoreLambda', {
       functionName: 'marketsage-analysis-store',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -355,6 +383,7 @@ export class MarketsageInfraStack extends cdk.Stack {
       memorySize: 256,
       environment: {
         ANALYSIS_TABLE_NAME: analysisTable.tableName,
+        REPORTS_BUCKET_NAME: reportsBucket.bucketName,
         NODE_OPTIONS: '--enable-source-maps',
       },
       layers: [lambdaLayer],
@@ -362,6 +391,9 @@ export class MarketsageInfraStack extends cdk.Stack {
 
     // Grant DynamoDB access to analysis store Lambda
     analysisTable.grantReadWriteData(analysisStoreLambda);
+
+    // Grant S3 write access to analysis store Lambda
+    reportsBucket.grantWrite(analysisStoreLambda);
 
     // Ticker Enricher Lambda - Generates company descriptions using Gemini API
     const tickerEnricherLambda = new lambda.Function(this, 'TickerEnricherLambda', {
@@ -637,6 +669,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         'ticker.$': '$$.Map.Item.Value.ticker',
         'companyName.$': '$$.Map.Item.Value.companyName',
         'triggerType.$': '$$.Map.Item.Value.triggerType',
+        'activeSignals.$': '$$.Map.Item.Value.activeSignals',
         'closePrice.$': '$$.Map.Item.Value.closePrice',
         'peers.$': '$$.Map.Item.Value.peers',
         'scanDate.$': '$.scanDate',
@@ -865,6 +898,10 @@ export class MarketsageInfraStack extends cdk.Stack {
     const reportResource = reportsResource.addResource('{ticker}');
     reportResource.addMethod('GET', lambdaIntegration); // Get specific report
 
+    // Download route: /reports/{ticker}/download
+    const downloadResource = reportResource.addResource('download');
+    downloadResource.addMethod('GET', lambdaIntegration); // Get presigned URL for S3 download
+
     const datesResource = api.root.addResource('dates');
     datesResource.addMethod('GET', lambdaIntegration); // Get available dates
 
@@ -983,6 +1020,12 @@ frontend:
       value: analysisTable.tableName,
       description: 'DynamoDB Analysis Table Name',
       exportName: 'MarketsageAnalysisTable',
+    });
+
+    new cdk.CfnOutput(this, 'ReportsBucketName', {
+      value: reportsBucket.bucketName,
+      description: 'S3 Bucket for Full Reports',
+      exportName: 'MarketsageReportsBucket',
     });
   }
 }

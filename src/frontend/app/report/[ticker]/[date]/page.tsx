@@ -5,9 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { StockReport } from '@/types';
-import { fetchDailyBreakthroughs } from '@/lib/api';
+import { fetchDailyBreakthroughs, getReportDownloadUrl } from '@/lib/api';
 import { formatDate, getVerdictColor } from '@/lib/utils';
-import { ArrowLeft, Download, Calendar, TrendingUp, Shield, Target } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, TrendingUp, Shield, Target, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -19,6 +19,7 @@ export default function FullReportPage() {
 
   const [report, setReport] = useState<StockReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,12 +44,29 @@ export default function FullReportPage() {
     loadReport();
   }, [ticker, date]);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!report) return;
 
+    setDownloading(true);
+    try {
+      // Try to get S3 download URL first (full JSON report with all data)
+      const downloadUrl = await getReportDownloadUrl(report.ticker, report.triggerDate);
+
+      if (downloadUrl) {
+        // Open S3 presigned URL in new tab to download full JSON report
+        window.open(downloadUrl, '_blank');
+        setDownloading(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('S3 download not available, falling back to local generation');
+    }
+
+    // Fallback: Generate markdown locally from current data
     const fullContent = `# ${report.ticker} - ${report.companyName}
 Date: ${formatDate(report.triggerDate)}
 Trigger: ${report.triggerType}
+Active Signals: ${(report.activeSignals || [report.triggerType]).join(', ')}
 Verdict: ${report.verdict}
 Confidence: ${report.confidence}/10
 
@@ -71,11 +89,32 @@ ${report.bearThesis.map((p, i) => `### Point ${i + 1}: ${p.point}
 ${p.evidence}
 ${p.source ? `Source: ${p.source}` : ''}`).join('\n\n')}
 
+${report.rebuttals ? `---
+
+## Cross-Examination
+
+### Bull Rebuttals to Bear Points
+${report.rebuttals.bullRebuttals.map((r, i) => `**Against:** ${r.originalPoint}
+**Rebuttal:** ${r.rebuttal}
+**Evidence:** ${r.evidence}
+**Strength:** ${r.strengthOfRebuttal}/10`).join('\n\n')}
+
+### Bear Rebuttals to Bull Points
+${report.rebuttals.bearRebuttals.map((r, i) => `**Against:** ${r.originalPoint}
+**Rebuttal:** ${r.rebuttal}
+**Evidence:** ${r.evidence}
+**Strength:** ${r.strengthOfRebuttal}/10`).join('\n\n')}
+` : ''}
 ---
 
 ## Consensus Summary
 ${report.consensusSummary.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 
+${report.reportContent ? `---
+
+## Full Report
+${report.reportContent}
+` : ''}
 ---
 
 ## Appendix: Deep Thinking Trace
@@ -93,6 +132,7 @@ ${report.appendix}
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    setDownloading(false);
   };
 
   if (loading) {
@@ -141,9 +181,13 @@ ${report.appendix}
                 <span className="text-gray-600">{report.companyName}</span>
               </div>
             </div>
-            <Button onClick={handleDownload} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1" />
-              Download Full Report
+            <Button onClick={handleDownload} variant="outline" size="sm" disabled={downloading}>
+              {downloading ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-1" />
+              )}
+              {downloading ? 'Downloading...' : 'Download Full Report'}
             </Button>
           </div>
         </div>

@@ -33,3 +33,10 @@ coverage/
 
 # Lambda deployment packages
 *.zip
+
+# Lambda compiled JS (from TypeScript sources)
+# Only commit .ts files, compile before deploying
+src/backend/lambda/*/index.js
+# Keep pure JS lambdas (no TypeScript source)
+!src/backend/lambda/report-persister/index.js
+!src/backend/lambda/retro-exam/index.js

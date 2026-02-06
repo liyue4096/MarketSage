@@ -14,6 +14,7 @@
 // Use require for Lambda runtime compatibility
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 // Types for GAN analysis results
 interface ThesisPoint {
@@ -94,25 +95,61 @@ interface StoreAnalysisResult {
   action: string;
   message: string;
   thoughtSignature?: string;
+  s3Key?: string;
   data?: any;
 }
 
 // DynamoDB table name
 const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
 
+// S3 bucket for full reports
+const REPORTS_BUCKET = process.env.REPORTS_BUCKET_NAME || '';
+
 // DynamoDB client
-const client = new DynamoDBClient({
+const dynamoClient = new DynamoDBClient({
   region: process.env.AWS_REGION || 'us-west-2',
   ...(process.env.DYNAMODB_ENDPOINT && {
     endpoint: process.env.DYNAMODB_ENDPOINT
   })
 });
 
-const docClient = DynamoDBDocumentClient.from(client, {
+const docClient = DynamoDBDocumentClient.from(dynamoClient, {
   marshallOptions: {
     removeUndefinedValues: true,
   }
 });
+
+// S3 client
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-west-2',
+});
+
+// Write full report to S3 (called after final update with translations)
+async function writeReportToS3(
+  ticker: string,
+  triggerDate: string,
+  fullReport: Record<string, any>
+): Promise<void> {
+  if (!REPORTS_BUCKET) {
+    console.log('[AnalysisStore] S3 bucket not configured, skipping S3 write');
+    return;
+  }
+
+  const s3Key = `${triggerDate}/${ticker}.json`;
+
+  try {
+    await s3Client.send(new PutObjectCommand({
+      Bucket: REPORTS_BUCKET,
+      Key: s3Key,
+      Body: JSON.stringify(fullReport, null, 2),
+      ContentType: 'application/json',
+    }));
+    console.log(`[AnalysisStore] Written full report to s3://${REPORTS_BUCKET}/${s3Key}`);
+  } catch (error) {
+    // Log but don't fail - S3 is for download convenience, DynamoDB is source of truth
+    console.error(`[AnalysisStore] Failed to write to S3: ${(error as Error).message}`);
+  }
+}
 
 // Store analysis results
 async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisResult> {
@@ -239,6 +276,10 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
       TableName: TABLE_NAME,
       Item: item,
     }));
+
+    // Write full report to S3 only when translations are complete (final step)
+    // This creates the downloadable full report at s3://{bucket}/{date}/{ticker}.json
+    await writeReportToS3(ticker, triggerDate!, item);
   } else {
     await docClient.send(new PutCommand({
       TableName: TABLE_NAME,
@@ -251,7 +292,8 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
     success: true,
     action: 'store-analysis',
     message: `Analysis stored successfully for ${ticker} on ${triggerDate}`,
-    thoughtSignature
+    thoughtSignature,
+    s3Key: reportContentChinese ? `${triggerDate}/${ticker}.json` : undefined,
   };
 }
 
