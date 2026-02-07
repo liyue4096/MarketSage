@@ -287,13 +287,16 @@ interface StockReport {
 async function fetchCompanyDescriptions(tickers: string[]): Promise<Map<string, string>> {
   if (tickers.length === 0) return new Map();
 
+  // Deduplicate tickers - BatchGetItem rejects duplicate keys
+  const uniqueTickers = [...new Set(tickers)];
+
   try {
     const descMap = new Map<string, string>();
 
     // DynamoDB BatchGetItem has a limit of 100 items per request
     const BATCH_SIZE = 100;
-    for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
-      const batch = tickers.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < uniqueTickers.length; i += BATCH_SIZE) {
+      const batch = uniqueTickers.slice(i, i + BATCH_SIZE);
 
       const result = await docClient.send(new BatchGetCommand({
         RequestItems: {
