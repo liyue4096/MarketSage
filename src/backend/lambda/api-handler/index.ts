@@ -1,123 +1,17 @@
 import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, QueryCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-// Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
-import {
-  RDSDataClient,
-  ExecuteStatementCommand,
-  Field,
-  TypeHint,
-} from '@aws-sdk/client-rds-data';
-
-// ============================================
-// RDS Data API Compatibility Layer
-// ============================================
-
-interface QueryResult<T = Record<string, unknown>> {
-  rows: T[];
-  rowCount: number;
-}
-
-function convertPositionalToNamed(sql: string): string {
-  let index = 0;
-  return sql.replace(/\$(\d+)/g, () => `:p${index++}`);
-}
-
-// Check if string looks like a date (YYYY-MM-DD format)
-function isDateString(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function toSqlParameter(value: unknown, index: number): { name: string; value: Field; typeHint?: TypeHint } {
-  const name = `p${index}`;
-  if (value === null || value === undefined) return { name, value: { isNull: true } };
-  if (typeof value === 'string') {
-    if (isDateString(value)) {
-      return { name, value: { stringValue: value }, typeHint: 'DATE' };
-    }
-    return { name, value: { stringValue: value } };
-  }
-  if (typeof value === 'number') {
-    return Number.isInteger(value) ? { name, value: { longValue: value } } : { name, value: { doubleValue: value } };
-  }
-  if (typeof value === 'boolean') return { name, value: { booleanValue: value } };
-  if (Array.isArray(value)) return { name, value: { stringValue: `{${value.join(',')}}` } };
-  return { name, value: { stringValue: String(value) } };
-}
-
-function fromField(field: Field): unknown {
-  const f = field as unknown as Record<string, unknown>;
-  if (f.isNull) return null;
-  if (f.stringValue !== undefined) return f.stringValue;
-  if (f.longValue !== undefined) return Number(f.longValue);
-  if (f.doubleValue !== undefined) return f.doubleValue;
-  if (f.booleanValue !== undefined) return f.booleanValue;
-  return null;
-}
-
-class DataApiPool {
-  private rdsClient: RDSDataClient;
-  private resourceArn: string;
-  private secretArn: string;
-  private database: string;
-
-  constructor(resourceArn: string, secretArn: string, database: string) {
-    this.rdsClient = new RDSDataClient({ region: process.env.AWS_REGION || 'us-west-2' });
-    this.resourceArn = resourceArn;
-    this.secretArn = secretArn;
-    this.database = database;
-  }
-
-  async query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<QueryResult<T>> {
-    const convertedSql = convertPositionalToNamed(sql);
-    const sqlParams = params?.map((value, index) => toSqlParameter(value, index));
-
-    const response = await this.rdsClient.send(new ExecuteStatementCommand({
-      resourceArn: this.resourceArn, secretArn: this.secretArn, database: this.database,
-      sql: convertedSql, parameters: sqlParams, includeResultMetadata: true,
-    }));
-
-    const columnNames = response.columnMetadata?.map((col: { name?: string }) => col.name || '') || [];
-    const rows: T[] = (response.records || []).map((record: Field[]) => {
-      const row: Record<string, unknown> = {};
-      record.forEach((field: Field, index: number) => {
-        row[columnNames[index] || `col${index}`] = fromField(field);
-      });
-      return row as T;
-    });
-
-    return { rows, rowCount: response.numberOfRecordsUpdated ?? rows.length };
-  }
-
-  async end(): Promise<void> {}
-}
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
-const secretsClient = new SecretsManagerClient({});
 const s3Client = new S3Client({});
 
 const TABLE_NAME = process.env.ANALYSIS_TABLE_NAME || 'marketsage-analysis';
 const COMPANY_DESC_TABLE = process.env.COMPANY_DESCRIPTIONS_TABLE || 'marketsage-company-descriptions';
+const SIGNALS_TABLE = process.env.SIGNALS_TABLE_NAME || 'marketsage-signals';
 const REPORTS_BUCKET = process.env.REPORTS_BUCKET_NAME || '';
-
-// RDS Data API pool (lazy initialized)
-let dbPool: DataApiPool | null = null;
-
-// Get database pool using RDS Data API (no VPC/NAT Gateway needed)
-function getDbPool(): DataApiPool {
-  if (dbPool) return dbPool;
-
-  const resourceArn = process.env.DB_CLUSTER_ARN!;
-  const secretArn = process.env.DB_SECRET_ARN!;
-  const database = process.env.DB_NAME || 'marketsage';
-
-  dbPool = new DataApiPool(resourceArn, secretArn, database);
-  return dbPool;
-}
 
 // Signal types for API response
 interface MASignalResponse {
@@ -132,23 +26,10 @@ interface MASignalResponse {
   source?: 'nasdaq_100' | 'russell_1000';
 }
 
-// Type for signal query result from database
-interface SignalQueryRow {
-  signal_date: string;
-  ticker: string;
-  company_name: string | null;
-  close_price: number;
-  price_change_pct: number;
-  ma_20_signal: string | null;
-  ma_60_signal: string | null;
-  ma_250_signal: string | null;
-  source: string | null;
-}
-
-// Map database signal to frontend format
-function mapSignalDirection(signal: string | null): 'UP' | 'DOWN' | 'NONE' {
-  if (signal === 'CROSS_ABOVE') return 'UP';
-  if (signal === 'CROSS_BELOW') return 'DOWN';
+// Map signal direction from DynamoDB/database format to frontend format
+function mapSignalDirection(signal: string | null | undefined): 'UP' | 'DOWN' | 'NONE' {
+  if (signal === 'CROSS_ABOVE' || signal === 'UP') return 'UP';
+  if (signal === 'CROSS_BELOW' || signal === 'DOWN') return 'DOWN';
   return 'NONE';
 }
 
@@ -519,7 +400,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       } while (lastEvaluatedKey);
 
       // Fetch company descriptions for all tickers
-      const tickers = allItems.map((item) => (item as DynamoAnalysisRecord).ticker);
+      const tickers = allItems.map((item) => (item as unknown as DynamoAnalysisRecord).ticker);
       const descriptions = await fetchCompanyDescriptions(tickers);
 
       const reports = allItems.map((item) => {
@@ -593,18 +474,19 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       };
     }
 
-    // Get available signal dates
+    // Get available signal dates (from DynamoDB - instant, no Aurora cold start)
     if ((path === '/signals/dates' || path === '/prod/signals/dates') && httpMethod === 'GET') {
-      console.log('[ApiHandler] Fetching signal dates');
-      const pool = getDbPool();
-      const result = await pool.query<{ signal_date: string }>(`
-        SELECT DISTINCT signal_date::text
-        FROM ma_signals
-        ORDER BY signal_date DESC
-        LIMIT 90
-      `);
+      console.log('[ApiHandler] Fetching signal dates from DynamoDB');
 
-      const dates = result.rows.map((row) => row.signal_date);
+      const result = await docClient.send(new QueryCommand({
+        TableName: SIGNALS_TABLE,
+        KeyConditionExpression: 'PK = :pk',
+        ExpressionAttributeValues: { ':pk': 'SIGNAL_DATES' },
+        ScanIndexForward: false,
+        Limit: 90,
+      }));
+
+      const dates = (result.Items || []).map(item => item.SK as string);
       console.log(`[ApiHandler] Found ${dates.length} signal dates`);
 
       return {
@@ -614,7 +496,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       };
     }
 
-    // Get signals for a specific date
+    // Get signals for a specific date (from DynamoDB - instant, no Aurora cold start)
     if ((path === '/signals' || path === '/prod/signals') && httpMethod === 'GET') {
       const date = queryStringParameters?.date;
 
@@ -626,42 +508,24 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         };
       }
 
-      console.log(`[ApiHandler] Fetching signals for date: ${date}`);
-      const pool = getDbPool();
+      console.log(`[ApiHandler] Fetching signals for date: ${date} from DynamoDB`);
 
-      // Join with nasdaq_100 and russell_1000 to get company name and source
-      const result = await pool.query<SignalQueryRow>(`
-        SELECT
-          s.signal_date::text,
-          s.ticker,
-          COALESCE(n.name, r.name) as company_name,
-          s.close_price::float,
-          s.price_change_pct::float,
-          s.ma_20_signal,
-          s.ma_60_signal,
-          s.ma_250_signal,
-          CASE
-            WHEN n.ticker IS NOT NULL THEN 'nasdaq_100'
-            WHEN r.ticker IS NOT NULL THEN 'russell_1000'
-            ELSE NULL
-          END as source
-        FROM ma_signals s
-        LEFT JOIN nasdaq_100 n ON s.ticker = n.ticker
-        LEFT JOIN russell_1000 r ON s.ticker = r.ticker AND n.ticker IS NULL
-        WHERE s.signal_date = $1
-        ORDER BY s.price_change_pct DESC
-      `, [date]);
+      const result = await docClient.send(new QueryCommand({
+        TableName: SIGNALS_TABLE,
+        KeyConditionExpression: 'PK = :pk',
+        ExpressionAttributeValues: { ':pk': `DATE#${date}` },
+      }));
 
-      const signals: MASignalResponse[] = result.rows.map((row) => ({
-        ticker: row.ticker,
-        companyName: row.company_name ?? undefined,
-        signalDate: row.signal_date,
-        closePrice: row.close_price,
-        priceChangePct: row.price_change_pct,
-        ma20Signal: mapSignalDirection(row.ma_20_signal),
-        ma60Signal: mapSignalDirection(row.ma_60_signal),
-        ma250Signal: mapSignalDirection(row.ma_250_signal),
-        source: (row.source as 'nasdaq_100' | 'russell_1000') ?? undefined,
+      const signals: MASignalResponse[] = (result.Items || []).map((item) => ({
+        ticker: item.SK as string,
+        companyName: (item.companyName as string) ?? undefined,
+        signalDate: date,
+        closePrice: item.closePrice as number,
+        priceChangePct: item.priceChangePct as number,
+        ma20Signal: mapSignalDirection(item.ma20Signal as string),
+        ma60Signal: mapSignalDirection(item.ma60Signal as string),
+        ma250Signal: mapSignalDirection(item.ma250Signal as string),
+        source: (item.source as 'nasdaq_100' | 'russell_1000') ?? undefined,
       }));
 
       console.log(`[ApiHandler] Found ${signals.length} signals for ${date}`);

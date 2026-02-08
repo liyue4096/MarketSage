@@ -12,6 +12,8 @@
  * - Only tickers with price increase AND valid crossover signals are stored
  */
 
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, BatchWriteCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 // Using RDS Data API instead of pg for cost savings (no VPC/NAT Gateway needed)
 import {
@@ -164,6 +166,11 @@ class DataApiPool {
   async end(): Promise<void> {}
 }
 
+// DynamoDB client for signals cache (instant reads, no Aurora cold start)
+const ddbClient = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(ddbClient);
+const SIGNALS_TABLE = process.env.SIGNALS_TABLE_NAME || 'marketsage-signals';
+
 // Types
 type SignalType = 'CROSS_ABOVE' | 'CROSS_BELOW' | 'NONE';
 
@@ -184,7 +191,7 @@ interface MASignal {
 }
 
 interface SignalGeneratorEvent {
-  action: 'generate-signals' | 'query-signals' | 'migrate';
+  action: 'generate-signals' | 'query-signals' | 'migrate' | 'backfill-signals-cache';
   tradeDate?: string;  // YYYY-MM-DD format, defaults to today ET
   signalDate?: string; // For query-signals
   ticker?: string;     // For query-signals (optional filter)
@@ -318,6 +325,88 @@ async function runMigrations(pool: DataApiPool): Promise<void> {
     console.log('[SignalGenerator] Migrations completed successfully');
   } finally {
     client.release();
+  }
+}
+
+// Cache signals to DynamoDB for instant frontend reads
+// Queries company names from Aurora and writes denormalized signal items
+async function cacheSignalsToDynamoDB(pool: DataApiPool, tradeDate: string, signals: MASignal[]): Promise<void> {
+  if (signals.length === 0) return;
+
+  console.log(`[SignalGenerator] Caching ${signals.length} signals to DynamoDB...`);
+
+  try {
+    // Query company names and source for all signal tickers
+    const tickers = signals.map(s => s.ticker);
+    const placeholders = tickers.map((_, i) => `$${i + 1}`).join(',');
+
+    const companyResult = await pool.query<{
+      ticker: string;
+      company_name: string | null;
+      source: string | null;
+    }>(`
+      SELECT
+        r.ticker,
+        COALESCE(n.name, r.name) as company_name,
+        CASE
+          WHEN n.ticker IS NOT NULL THEN 'nasdaq_100'
+          WHEN r.ticker IS NOT NULL THEN 'russell_1000'
+          ELSE NULL
+        END as source
+      FROM russell_1000 r
+      LEFT JOIN nasdaq_100 n ON r.ticker = n.ticker
+      WHERE r.ticker IN (${placeholders})
+    `, tickers);
+
+    const companyMap = new Map<string, { name: string | null; source: string | null }>();
+    for (const row of companyResult.rows) {
+      companyMap.set(row.ticker, { name: row.company_name, source: row.source });
+    }
+
+    // Build DynamoDB items
+    const signalItems = signals.map(signal => {
+      const company = companyMap.get(signal.ticker);
+      return {
+        PutRequest: {
+          Item: {
+            PK: `DATE#${tradeDate}`,
+            SK: signal.ticker,
+            companyName: company?.name || undefined,
+            closePrice: signal.closePrice,
+            priceChangePct: signal.priceChangePercent,
+            ma20Signal: signal.ma20Signal,
+            ma60Signal: signal.ma60Signal,
+            ma250Signal: signal.ma250Signal,
+            source: company?.source || undefined,
+          },
+        },
+      };
+    });
+
+    // BatchWrite in chunks of 25 (DynamoDB limit)
+    const BATCH_SIZE = 25;
+    for (let i = 0; i < signalItems.length; i += BATCH_SIZE) {
+      const batch = signalItems.slice(i, i + BATCH_SIZE);
+      await docClient.send(new BatchWriteCommand({
+        RequestItems: {
+          [SIGNALS_TABLE]: batch,
+        },
+      }));
+    }
+
+    // Write date index item
+    await docClient.send(new PutCommand({
+      TableName: SIGNALS_TABLE,
+      Item: {
+        PK: 'SIGNAL_DATES',
+        SK: tradeDate,
+      },
+    }));
+
+    console.log(`[SignalGenerator] Cached ${signals.length} signals + date index to DynamoDB`);
+  } catch (error) {
+    // Non-fatal: Aurora is source of truth, DynamoDB is cache
+    console.error('[SignalGenerator] Failed to cache signals to DynamoDB (non-fatal):', (error as Error).message);
   }
 }
 
@@ -474,6 +563,9 @@ async function generateSignals(pool: DataApiPool, tradeDate: string): Promise<Si
     console.log(`[SignalGenerator] Stored ${signals.length} valid crossover signals`);
     console.log(`[SignalGenerator] Signals by MA: 20-day=${activeSignals.ma20}, 60-day=${activeSignals.ma60}, 250-day=${activeSignals.ma250}`);
 
+    // Cache signals in DynamoDB for instant frontend reads (no Aurora cold start)
+    await cacheSignalsToDynamoDB(pool, tradeDate, signals);
+
     return {
       success: true,
       action: 'generate-signals',
@@ -556,6 +648,72 @@ async function querySignals(pool: DataApiPool, signalDate: string, ticker?: stri
   }
 }
 
+// Backfill all existing Aurora signals to DynamoDB cache (one-time migration)
+async function backfillSignalsCache(pool: DataApiPool): Promise<SignalGeneratorResult> {
+  console.log('[SignalGenerator] Starting backfill of signals cache to DynamoDB...');
+
+  // Get all distinct signal dates from Aurora
+  const datesResult = await pool.query<{ signal_date: string }>(
+    `SELECT DISTINCT signal_date::text FROM ma_signals ORDER BY signal_date DESC`
+  );
+
+  const dates = datesResult.rows.map(r => r.signal_date);
+  console.log(`[SignalGenerator] Found ${dates.length} signal dates to backfill`);
+
+  let totalSignals = 0;
+  let successDates = 0;
+
+  for (const date of dates) {
+    // Query signals for this date
+    const result = await pool.query<SignalQueryRow>(`
+      SELECT
+        signal_date::text,
+        ticker,
+        close_price::float,
+        prev_close_price::float,
+        price_change_pct::float,
+        ma_20_signal,
+        ma_60_signal,
+        ma_250_signal,
+        sma_20::float,
+        sma_60::float,
+        sma_250::float,
+        generated_at::text,
+        reported_at::text
+      FROM ma_signals
+      WHERE signal_date = $1
+      ORDER BY price_change_pct DESC
+    `, [date]);
+
+    const signals: MASignal[] = result.rows.map(row => ({
+      ticker: row.ticker,
+      signalDate: row.signal_date,
+      closePrice: row.close_price,
+      prevClosePrice: row.prev_close_price,
+      priceChangePercent: row.price_change_pct,
+      sma20: row.sma_20,
+      sma60: row.sma_60,
+      sma250: row.sma_250,
+      ma20Signal: row.ma_20_signal as SignalType,
+      ma60Signal: row.ma_60_signal as SignalType,
+      ma250Signal: row.ma_250_signal as SignalType,
+      generatedAt: row.generated_at,
+      reportedAt: row.reported_at,
+    }));
+
+    await cacheSignalsToDynamoDB(pool, date, signals);
+    totalSignals += signals.length;
+    successDates++;
+    console.log(`[SignalGenerator] Backfilled ${date}: ${signals.length} signals (${successDates}/${dates.length})`);
+  }
+
+  return {
+    success: true,
+    action: 'backfill-signals-cache',
+    message: `Backfilled ${totalSignals} signals across ${successDates} dates to DynamoDB`,
+  };
+}
+
 // Lambda handler
 type Handler<TEvent = any, TResult = any> = (event: TEvent, context: any) => Promise<TResult>;
 
@@ -586,11 +744,14 @@ export const handler: Handler<SignalGeneratorEvent, SignalGeneratorResult> = asy
         const signalDate = event.signalDate || tradeDate;
         return await querySignals(pool, signalDate, event.ticker);
 
+      case 'backfill-signals-cache':
+        return await backfillSignalsCache(pool);
+
       default:
         return {
           success: false,
           action,
-          message: `Unknown action: ${action}. Valid actions: generate-signals, query-signals, migrate`,
+          message: `Unknown action: ${action}. Valid actions: generate-signals, query-signals, migrate, backfill-signals-cache`,
         };
     }
 

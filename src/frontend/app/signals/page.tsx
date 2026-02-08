@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useReducer } from 'react';
+import { useState, useEffect, useReducer, useMemo } from 'react';
 import {
   Calendar,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -73,6 +75,23 @@ const initialState: State = {
 // Filter options
 type FilterType = 'all' | 'up' | 'down' | 'ma20' | 'ma60' | 'ma250';
 
+// Generate page numbers with ellipsis
+function generatePageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages: (number | string)[] = [1];
+  if (current > 3) pages.push('...');
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
 const SignalBadge = ({ direction }: { direction: SignalDirection }) => {
   if (direction === 'NONE') {
     return (
@@ -98,12 +117,15 @@ const SignalBadge = ({ direction }: { direction: SignalDirection }) => {
   );
 };
 
+const PAGE_SIZE = 25;
+
 export default function SignalsPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [sortField, setSortField] = useState<'ticker' | 'priceChange'>('priceChange');
   const [sortAsc, setSortAsc] = useState(false);
+  const [page, setPage] = useState(1);
 
   // Fetch dates on mount
   useEffect(() => {
@@ -145,8 +167,13 @@ export default function SignalsPage() {
     loadSignals();
   }, [state.selectedDate]);
 
+  // Reset page when filter or sort changes
+  useEffect(() => {
+    setPage(1);
+  }, [filterType, sortField, sortAsc]);
+
   // Filter signals
-  const filteredSignals = state.signals.filter((signal) => {
+  const filteredSignals = useMemo(() => state.signals.filter((signal) => {
     if (filterType === 'all') return true;
     if (filterType === 'up') {
       return (
@@ -166,10 +193,10 @@ export default function SignalsPage() {
     if (filterType === 'ma60') return signal.ma60Signal !== 'NONE';
     if (filterType === 'ma250') return signal.ma250Signal !== 'NONE';
     return true;
-  });
+  }), [state.signals, filterType]);
 
   // Sort signals
-  const sortedSignals = [...filteredSignals].sort((a, b) => {
+  const sortedSignals = useMemo(() => [...filteredSignals].sort((a, b) => {
     if (sortField === 'ticker') {
       return sortAsc
         ? a.ticker.localeCompare(b.ticker)
@@ -178,7 +205,11 @@ export default function SignalsPage() {
     return sortAsc
       ? a.priceChangePct - b.priceChangePct
       : b.priceChangePct - a.priceChangePct;
-  });
+  }), [filteredSignals, sortField, sortAsc]);
+
+  // Pagination
+  const totalPages = Math.ceil(sortedSignals.length / PAGE_SIZE);
+  const pagedSignals = sortedSignals.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const toggleSort = (field: 'ticker' | 'priceChange') => {
     if (sortField === field) {
@@ -186,6 +217,23 @@ export default function SignalsPage() {
     } else {
       setSortField(field);
       setSortAsc(field === 'ticker');
+    }
+  };
+
+  // Navigate between dates
+  const dateIndex = state.dates.indexOf(state.selectedDate || '');
+  const hasPrevDate = dateIndex < state.dates.length - 1;
+  const hasNextDate = dateIndex > 0;
+  const goPrevDate = () => {
+    if (hasPrevDate) {
+      dispatch({ type: 'SELECT_DATE', date: state.dates[dateIndex + 1] });
+      setPage(1);
+    }
+  };
+  const goNextDate = () => {
+    if (hasNextDate) {
+      dispatch({ type: 'SELECT_DATE', date: state.dates[dateIndex - 1] });
+      setPage(1);
     }
   };
 
@@ -211,39 +259,62 @@ export default function SignalsPage() {
 
         {/* Controls Row */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          {/* Date Picker */}
-          <div className="relative">
+          {/* Date Picker with Prev/Next */}
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg
-                       hover:bg-gray-50 transition-colors min-w-[180px]"
+              onClick={goPrevDate}
+              disabled={!hasPrevDate}
+              className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50
+                       disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Previous day"
             >
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">
-                {state.selectedDate ? formatDate(state.selectedDate) : 'Select date'}
-              </span>
-              <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
 
-            {dateDropdownOpen && (
-              <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-                {state.dates.map((date) => (
-                  <button
-                    key={date}
-                    onClick={() => {
-                      dispatch({ type: 'SELECT_DATE', date });
-                      setDateDropdownOpen(false);
-                    }}
-                    className={cn(
-                      'w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition-colors',
-                      date === state.selectedDate && 'bg-blue-50 text-blue-700'
-                    )}
-                  >
-                    {formatDate(date)}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="relative">
+              <button
+                onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg
+                         hover:bg-gray-50 transition-colors min-w-[180px]"
+              >
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">
+                  {state.selectedDate ? formatDate(state.selectedDate) : 'Select date'}
+                </span>
+                <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+              </button>
+
+              {dateDropdownOpen && (
+                <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                  {state.dates.map((date) => (
+                    <button
+                      key={date}
+                      onClick={() => {
+                        dispatch({ type: 'SELECT_DATE', date });
+                        setDateDropdownOpen(false);
+                        setPage(1);
+                      }}
+                      className={cn(
+                        'w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition-colors',
+                        date === state.selectedDate && 'bg-blue-50 text-blue-700'
+                      )}
+                    >
+                      {formatDate(date)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={goNextDate}
+              disabled={!hasNextDate}
+              className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50
+                       disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Next day"
+            >
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            </button>
           </div>
 
           {/* Filter Buttons */}
@@ -307,7 +378,30 @@ export default function SignalsPage() {
         {state.pageState === 'error' && (
           <div className="text-center py-20">
             <div className="text-red-500 mb-2">Failed to load signals</div>
-            <div className="text-sm text-gray-500">{state.error}</div>
+            <div className="text-sm text-gray-500 mb-4">{state.error}</div>
+            <button
+              onClick={() => {
+                if (state.selectedDate) {
+                  dispatch({ type: 'SET_LOADING' });
+                  fetchSignalsByDate(state.selectedDate).then(
+                    (signals) => dispatch({ type: 'SET_SIGNALS', signals }),
+                    (err) => dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : 'Failed to load signals' })
+                  );
+                } else {
+                  dispatch({ type: 'SET_LOADING' });
+                  fetchSignalDates().then(
+                    (dates) => {
+                      if (dates.length === 0) dispatch({ type: 'SET_EMPTY' });
+                      else dispatch({ type: 'SET_DATES', dates });
+                    },
+                    (err) => dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : 'Failed to load dates' })
+                  );
+                }
+              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         )}
 
@@ -320,7 +414,7 @@ export default function SignalsPage() {
         )}
 
         {/* Signals Table */}
-        {state.pageState === 'ready' && sortedSignals.length > 0 && (
+        {state.pageState === 'ready' && pagedSignals.length > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -365,7 +459,7 @@ export default function SignalsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {sortedSignals.map((signal) => (
+                  {pagedSignals.map((signal) => (
                     <tr key={signal.ticker} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <span className="font-semibold text-gray-900">{signal.ticker}</span>
@@ -416,6 +510,53 @@ export default function SignalsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {state.pageState === 'ready' && totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg mt-4">
+            <div className="text-sm text-gray-600">
+              Showing {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, sortedSignals.length)} of {sortedSignals.length}
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(page - 1)}
+                disabled={page <= 1}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200
+                         hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+
+              {generatePageNumbers(page, totalPages).map((p, i) =>
+                p === '...' ? (
+                  <span key={`ellipsis-${i}`} className="px-2 text-gray-400 text-sm">...</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p as number)}
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                      page === p
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-200 hover:bg-gray-50'
+                    )}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page >= totalPages}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200
+                         hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
             </div>
           </div>
         )}

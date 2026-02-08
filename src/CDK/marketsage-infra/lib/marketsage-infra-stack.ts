@@ -137,6 +137,20 @@ export class MarketsageInfraStack extends cdk.Stack {
     });
 
     // ========================================
+    // DynamoDB Table for Signals Cache
+    // ========================================
+    // Caches MA crossover signals for instant frontend reads (no Aurora cold start)
+    // PK="SIGNAL_DATES" + SK=date for date listing
+    // PK="DATE#{date}" + SK=ticker for signals per date
+    const signalsTable = new dynamodb.Table(this, 'SignalsTable', {
+      tableName: 'marketsage-signals',
+      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    // ========================================
     // S3 Bucket for Full Report Storage
     // ========================================
     // Stores complete analysis reports as JSON for download
@@ -319,6 +333,7 @@ export class MarketsageInfraStack extends cdk.Stack {
         ...commonEnv,
         ANALYSIS_TABLE_NAME: analysisTable.tableName,
         COMPANY_DESCRIPTIONS_TABLE: companyDescriptionsTable.tableName,
+        SIGNALS_TABLE_NAME: signalsTable.tableName,
         REPORTS_BUCKET_NAME: reportsBucket.bucketName,
       },
       layers: [lambdaLayer],
@@ -327,6 +342,7 @@ export class MarketsageInfraStack extends cdk.Stack {
     // Grant DynamoDB read access to API handler
     analysisTable.grantReadData(apiHandlerLambda);
     companyDescriptionsTable.grantReadData(apiHandlerLambda);
+    signalsTable.grantReadData(apiHandlerLambda);
 
     // Grant S3 read access to API handler for report downloads
     reportsBucket.grantRead(apiHandlerLambda);
@@ -354,9 +370,15 @@ export class MarketsageInfraStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(backendPath, 'lambda/signal-generator')),
       timeout: cdk.Duration.minutes(10),
       memorySize: 1024,
-      environment: commonEnv,
+      environment: {
+        ...commonEnv,
+        SIGNALS_TABLE_NAME: signalsTable.tableName,
+      },
       layers: [lambdaLayer],
     });
+
+    // Grant signal generator write access to signals cache
+    signalsTable.grantReadWriteData(signalGeneratorLambda);
 
     // Report Selector Lambda - Selects tickers for daily reports with quota management
     const reportSelectorLambda = new lambda.Function(this, 'ReportSelectorLambda', {
