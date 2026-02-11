@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, QueryCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const client = new DynamoDBClient({});
@@ -559,15 +559,33 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         };
       }
 
-      const s3Key = `${date}/${ticker}.md`;
+      // Try .md first (new format), fall back to .json (legacy)
+      let s3Key = `${date}/${ticker}.md`;
+      try {
+        await s3Client.send(new HeadObjectCommand({ Bucket: REPORTS_BUCKET, Key: s3Key }));
+      } catch {
+        // .md not found, try .json
+        s3Key = `${date}/${ticker}.json`;
+        try {
+          await s3Client.send(new HeadObjectCommand({ Bucket: REPORTS_BUCKET, Key: s3Key }));
+        } catch {
+          return {
+            statusCode: 404,
+            headers,
+            body: JSON.stringify({ error: 'Report not found', ticker, date }),
+          };
+        }
+      }
+
       console.log(`[ApiHandler] Generating presigned URL for s3://${REPORTS_BUCKET}/${s3Key}`);
 
       try {
+        const isMd = s3Key.endsWith('.md');
         const command = new GetObjectCommand({
           Bucket: REPORTS_BUCKET,
           Key: s3Key,
-          ResponseContentDisposition: `attachment; filename="${ticker}_${date}_report.md"`,
-          ResponseContentType: 'text/markdown',
+          ResponseContentDisposition: `attachment; filename="${ticker}_${date}_report.${isMd ? 'md' : 'json'}"`,
+          ResponseContentType: isMd ? 'text/markdown' : 'application/json',
         });
 
         // Generate presigned URL valid for 5 minutes

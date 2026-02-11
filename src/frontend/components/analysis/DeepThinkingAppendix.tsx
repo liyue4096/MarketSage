@@ -28,7 +28,12 @@ export default function DeepThinkingAppendix({
     try {
       const downloadUrl = await getReportDownloadUrl(ticker, triggerDate);
       if (downloadUrl) {
-        window.open(downloadUrl, '_blank');
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `${ticker}_${triggerDate}_report.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       } else {
         console.warn('Report not available for download yet');
       }
