@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Download, Search, Code2, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, Search, Code2, Loader2 } from 'lucide-react';
+import { getReportDownloadUrl } from '@/lib/api';
 
 interface DeepThinkingAppendixProps {
   appendix: string;
@@ -21,6 +21,23 @@ export default function DeepThinkingAppendix({
 }: DeepThinkingAppendixProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleReportDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const downloadUrl = await getReportDownloadUrl(ticker, triggerDate);
+      if (downloadUrl) {
+        window.open(downloadUrl, '_blank');
+      } else {
+        console.warn('Report not available for download yet');
+      }
+    } catch (err) {
+      console.error('Failed to download report:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const handleDownload = () => {
     const blob = new Blob([appendix], { type: 'text/plain' });
@@ -83,16 +100,20 @@ export default function DeepThinkingAppendix({
               {thoughtSignature}
             </code>
           </div>
-          <Link href={`/report/${ticker}/${triggerDate}`} target="_blank">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-blue-600 text-white border-blue-500 hover:bg-blue-700 hover:text-white"
-            >
-              <ExternalLink className="w-4 h-4 mr-1" />
-              View Full Report
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-blue-600 text-white border-blue-500 hover:bg-blue-700 hover:text-white"
+            onClick={handleReportDownload}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-1" />
+            )}
+            {isDownloading ? 'Downloading...' : 'Download Full Report'}
+          </Button>
         </div>
       </CardHeader>
 

@@ -559,13 +559,15 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         };
       }
 
-      const s3Key = `${date}/${ticker}.json`;
+      const s3Key = `${date}/${ticker}.md`;
       console.log(`[ApiHandler] Generating presigned URL for s3://${REPORTS_BUCKET}/${s3Key}`);
 
       try {
         const command = new GetObjectCommand({
           Bucket: REPORTS_BUCKET,
           Key: s3Key,
+          ResponseContentDisposition: `attachment; filename="${ticker}_${date}_report.md"`,
+          ResponseContentType: 'text/markdown',
         });
 
         // Generate presigned URL valid for 5 minutes

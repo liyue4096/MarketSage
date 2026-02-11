@@ -124,7 +124,204 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-west-2',
 });
 
-// Write full report to S3 (called after final update with translations)
+// --- Markdown report generation helpers ---
+
+function formatThesisPoints(lines: string[], thesis?: ThesisPoint[]): void {
+  if (!thesis?.length) return;
+  thesis.forEach((p, i) => {
+    lines.push(`### Point ${i + 1}: ${p.point}`);
+    lines.push('');
+    lines.push(p.evidence);
+    if (p.source) lines.push(`\n*Source: ${p.source}*`);
+    if (p.confidence) lines.push(`\n*Confidence: ${p.confidence}/10*`);
+    lines.push('');
+  });
+}
+
+function formatRebuttals(lines: string[], heading: string, rebuttals?: RebuttalPoint[]): void {
+  if (!rebuttals?.length) return;
+  lines.push(`### ${heading}`);
+  lines.push('');
+  rebuttals.forEach((r, i) => {
+    lines.push(`**${i + 1}. Against:** ${r.originalPoint}`);
+    lines.push(`**Rebuttal:** ${r.rebuttal}`);
+    lines.push(`**Evidence:** ${r.evidence}`);
+    lines.push(`**Strength:** ${r.strengthOfRebuttal}/10`);
+    lines.push('');
+  });
+}
+
+function generateMarkdownReport(report: Record<string, any>): string {
+  const lines: string[] = [];
+
+  // Header / Metadata
+  lines.push(`# ${report.ticker} - ${report.companyName || report.ticker}`);
+  lines.push('');
+  lines.push(`**Date:** ${report.triggerDate}`);
+  lines.push(`**Trigger:** ${report.triggerType}`);
+  lines.push(`**Active Signals:** ${(report.activeSignals || [report.triggerType]).join(', ')}`);
+  if (report.closePrice) lines.push(`**Close Price:** $${report.closePrice}`);
+  lines.push(`**Verdict:** ${report.verdict}`);
+  lines.push(`**Confidence:** ${report.confidence}/10`);
+  lines.push(`**Thought Signature:** \`${report.thoughtSignature}\``);
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  // Executive Summary
+  lines.push('## Executive Summary');
+  lines.push('');
+  lines.push(report.primaryCatalyst || '');
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  // Bull Thesis (EN)
+  lines.push('## Bull Thesis (English)');
+  lines.push('');
+  if (report.bullOpening?.primaryCatalyst) {
+    lines.push(`**Primary Catalyst:** ${report.bullOpening.primaryCatalyst}`);
+    lines.push('');
+  }
+  formatThesisPoints(lines, report.bullOpening?.thesis);
+
+  // Bull Thesis (CN)
+  if (report.bullOpeningChinese?.thesis) {
+    lines.push('## Bull Thesis (Chinese / 看多论点)');
+    lines.push('');
+    if (report.bullOpeningChinese.primaryCatalyst) {
+      lines.push(`**主要催化剂:** ${report.bullOpeningChinese.primaryCatalyst}`);
+      lines.push('');
+    }
+    formatThesisPoints(lines, report.bullOpeningChinese.thesis);
+  }
+
+  lines.push('---');
+  lines.push('');
+
+  // Bear Thesis (EN)
+  lines.push('## Bear Thesis (English)');
+  lines.push('');
+  if (report.bearOpening?.primaryRisk) {
+    lines.push(`**Primary Risk:** ${report.bearOpening.primaryRisk}`);
+    lines.push('');
+  }
+  formatThesisPoints(lines, report.bearOpening?.thesis);
+
+  // Bear Thesis (CN)
+  if (report.bearOpeningChinese?.thesis) {
+    lines.push('## Bear Thesis (Chinese / 看空论点)');
+    lines.push('');
+    if (report.bearOpeningChinese.primaryRisk) {
+      lines.push(`**主要风险:** ${report.bearOpeningChinese.primaryRisk}`);
+      lines.push('');
+    }
+    formatThesisPoints(lines, report.bearOpeningChinese.thesis);
+  }
+
+  lines.push('---');
+  lines.push('');
+
+  // Rebuttals (EN)
+  if (report.rebuttals) {
+    lines.push('## Cross-Examination (English)');
+    lines.push('');
+    formatRebuttals(lines, 'Bull Rebuttals to Bear Points', report.rebuttals.bullRebuttals);
+    formatRebuttals(lines, 'Bear Rebuttals to Bull Points', report.rebuttals.bearRebuttals);
+  }
+
+  // Rebuttals (CN)
+  if (report.rebuttalsChinese) {
+    lines.push('## Cross-Examination (Chinese / 交叉质询)');
+    lines.push('');
+    formatRebuttals(lines, '多方反驳', report.rebuttalsChinese.bullRebuttals);
+    formatRebuttals(lines, '空方反驳', report.rebuttalsChinese.bearRebuttals);
+  }
+
+  lines.push('---');
+  lines.push('');
+
+  // Consensus Summary (EN)
+  lines.push('## Consensus Summary');
+  lines.push('');
+  (report.consensusSummary || []).forEach((s: string, i: number) => {
+    lines.push(`${i + 1}. ${s}`);
+  });
+  lines.push('');
+
+  // Consensus Summary (CN)
+  if (report.consensusSummaryChinese?.length) {
+    lines.push('## Consensus Summary (Chinese / 共识总结)');
+    lines.push('');
+    report.consensusSummaryChinese.forEach((s: string, i: number) => {
+      lines.push(`${i + 1}. ${s}`);
+    });
+    lines.push('');
+  }
+
+  lines.push('---');
+  lines.push('');
+
+  // Full Report (EN)
+  if (report.reportContent) {
+    lines.push('## Full Report (English)');
+    lines.push('');
+    lines.push(report.reportContent);
+    lines.push('');
+  }
+
+  // Full Report (CN)
+  if (report.reportContentChinese) {
+    lines.push('## Full Report (Chinese / 完整报告)');
+    lines.push('');
+    lines.push(report.reportContentChinese);
+    lines.push('');
+  }
+
+  lines.push('---');
+  lines.push('');
+
+  // Appendix: Thinking Traces
+  lines.push('## Appendix: Deep Thinking Traces');
+  lines.push('');
+
+  if (report.appendix) {
+    lines.push('### Judge Thinking Trace');
+    lines.push('');
+    lines.push(report.appendix);
+    lines.push('');
+  }
+
+  if (report.bullOpening?.thinkingTrace) {
+    lines.push('### Bull Agent Thinking Trace');
+    lines.push('');
+    lines.push(report.bullOpening.thinkingTrace);
+    lines.push('');
+  }
+
+  if (report.bearOpening?.thinkingTrace) {
+    lines.push('### Bear Agent Thinking Trace');
+    lines.push('');
+    lines.push(report.bearOpening.thinkingTrace);
+    lines.push('');
+  }
+
+  if (report.rebuttals?.thinkingTrace) {
+    lines.push('### Rebuttals Thinking Trace');
+    lines.push('');
+    lines.push(report.rebuttals.thinkingTrace);
+    lines.push('');
+  }
+
+  // Footer
+  lines.push('---');
+  lines.push('');
+  lines.push(`*Generated by MarketSage on ${report.createdAt || new Date().toISOString()}*`);
+
+  return lines.join('\n');
+}
+
+// Write full report to S3 as formatted Markdown (called after final update with translations)
 async function writeReportToS3(
   ticker: string,
   triggerDate: string,
@@ -135,14 +332,16 @@ async function writeReportToS3(
     return;
   }
 
-  const s3Key = `${triggerDate}/${ticker}.json`;
+  const s3Key = `${triggerDate}/${ticker}.md`;
 
   try {
+    const markdown = generateMarkdownReport(fullReport);
     await s3Client.send(new PutObjectCommand({
       Bucket: REPORTS_BUCKET,
       Key: s3Key,
-      Body: JSON.stringify(fullReport, null, 2),
-      ContentType: 'application/json',
+      Body: markdown,
+      ContentType: 'text/markdown',
+      ContentDisposition: `attachment; filename="${ticker}_${triggerDate}_report.md"`,
     }));
     console.log(`[AnalysisStore] Written full report to s3://${REPORTS_BUCKET}/${s3Key}`);
   } catch (error) {
@@ -293,7 +492,7 @@ async function storeAnalysis(event: StoreAnalysisEvent): Promise<StoreAnalysisRe
     action: 'store-analysis',
     message: `Analysis stored successfully for ${ticker} on ${triggerDate}`,
     thoughtSignature,
-    s3Key: reportContentChinese ? `${triggerDate}/${ticker}.json` : undefined,
+    s3Key: reportContentChinese ? `${triggerDate}/${ticker}.md` : undefined,
   };
 }
 
