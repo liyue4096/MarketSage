@@ -415,6 +415,81 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       };
     }
 
+    // Download full report from S3 (presigned URL)
+    // Pattern: /reports/{ticker}/download?date=YYYY-MM-DD
+    // IMPORTANT: This must be matched BEFORE the generic /reports/{ticker} route below
+    if ((path.match(/\/reports\/[^/]+\/download$/) || path.match(/\/prod\/reports\/[^/]+\/download$/)) && httpMethod === 'GET') {
+      const ticker = path.split('/').slice(-2)[0]; // Extract ticker from path
+      const date = queryStringParameters?.date;
+
+      if (!ticker || !date) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'ticker (in path) and date (query param) are required' }),
+        };
+      }
+
+      if (!REPORTS_BUCKET) {
+        return {
+          statusCode: 503,
+          headers,
+          body: JSON.stringify({ error: 'Report downloads not configured' }),
+        };
+      }
+
+      // Try .md first (new format), fall back to .json (legacy)
+      let s3Key = `${date}/${ticker}.md`;
+      try {
+        await s3Client.send(new HeadObjectCommand({ Bucket: REPORTS_BUCKET, Key: s3Key }));
+      } catch {
+        // .md not found, try .json
+        s3Key = `${date}/${ticker}.json`;
+        try {
+          await s3Client.send(new HeadObjectCommand({ Bucket: REPORTS_BUCKET, Key: s3Key }));
+        } catch {
+          return {
+            statusCode: 404,
+            headers,
+            body: JSON.stringify({ error: 'Report not found', ticker, date }),
+          };
+        }
+      }
+
+      console.log(`[ApiHandler] Generating presigned URL for s3://${REPORTS_BUCKET}/${s3Key}`);
+
+      try {
+        const isMd = s3Key.endsWith('.md');
+        const command = new GetObjectCommand({
+          Bucket: REPORTS_BUCKET,
+          Key: s3Key,
+          ResponseContentDisposition: `attachment; filename="${ticker}_${date}_report.${isMd ? 'md' : 'json'}"`,
+          ResponseContentType: isMd ? 'text/markdown' : 'application/json',
+        });
+
+        // Generate presigned URL valid for 5 minutes
+        const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            ticker,
+            date,
+            downloadUrl: presignedUrl,
+            expiresIn: 300,
+          }),
+        };
+      } catch (error) {
+        console.error(`[ApiHandler] Error generating presigned URL:`, error);
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({ error: 'Report not found', ticker, date }),
+        };
+      }
+    }
+
     // Get specific report by ticker
     if ((path.startsWith('/reports/') || path.startsWith('/prod/reports/')) && httpMethod === 'GET') {
       const ticker = pathParameters?.ticker || path.split('/').pop();
@@ -535,80 +610,6 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         headers,
         body: JSON.stringify({ date, signals }),
       };
-    }
-
-    // Download full report from S3 (presigned URL)
-    // Pattern: /reports/{ticker}/download?date=YYYY-MM-DD
-    if ((path.match(/\/reports\/[^/]+\/download$/) || path.match(/\/prod\/reports\/[^/]+\/download$/)) && httpMethod === 'GET') {
-      const ticker = path.split('/').slice(-2)[0]; // Extract ticker from path
-      const date = queryStringParameters?.date;
-
-      if (!ticker || !date) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'ticker (in path) and date (query param) are required' }),
-        };
-      }
-
-      if (!REPORTS_BUCKET) {
-        return {
-          statusCode: 503,
-          headers,
-          body: JSON.stringify({ error: 'Report downloads not configured' }),
-        };
-      }
-
-      // Try .md first (new format), fall back to .json (legacy)
-      let s3Key = `${date}/${ticker}.md`;
-      try {
-        await s3Client.send(new HeadObjectCommand({ Bucket: REPORTS_BUCKET, Key: s3Key }));
-      } catch {
-        // .md not found, try .json
-        s3Key = `${date}/${ticker}.json`;
-        try {
-          await s3Client.send(new HeadObjectCommand({ Bucket: REPORTS_BUCKET, Key: s3Key }));
-        } catch {
-          return {
-            statusCode: 404,
-            headers,
-            body: JSON.stringify({ error: 'Report not found', ticker, date }),
-          };
-        }
-      }
-
-      console.log(`[ApiHandler] Generating presigned URL for s3://${REPORTS_BUCKET}/${s3Key}`);
-
-      try {
-        const isMd = s3Key.endsWith('.md');
-        const command = new GetObjectCommand({
-          Bucket: REPORTS_BUCKET,
-          Key: s3Key,
-          ResponseContentDisposition: `attachment; filename="${ticker}_${date}_report.${isMd ? 'md' : 'json'}"`,
-          ResponseContentType: isMd ? 'text/markdown' : 'application/json',
-        });
-
-        // Generate presigned URL valid for 5 minutes
-        const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
-
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({
-            ticker,
-            date,
-            downloadUrl: presignedUrl,
-            expiresIn: 300,
-          }),
-        };
-      } catch (error) {
-        console.error(`[ApiHandler] Error generating presigned URL:`, error);
-        return {
-          statusCode: 404,
-          headers,
-          body: JSON.stringify({ error: 'Report not found', ticker, date }),
-        };
-      }
     }
 
     // Route not found
